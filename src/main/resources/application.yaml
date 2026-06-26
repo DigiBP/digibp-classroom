@@ -52,6 +52,11 @@ cibseven:
     engineRest:
       url: http://localhost:8080
       path: /engine-rest
+    modeler:
+      enabled: true
+      templates:
+        paths:
+          - classpath*:element-templates/*.json
 #  jersey:
 #    application-path: /rest
 #  datasource:

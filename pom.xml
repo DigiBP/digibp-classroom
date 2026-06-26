@@ -74,6 +74,11 @@
             <groupId>org.cibseven.connect</groupId>
             <artifactId>cibseven-connect-http-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.cibseven.connect</groupId>
+            <artifactId>cibseven-connect-ai-agent</artifactId>
+            <version>${cibseven.version}</version>
+        </dependency>
 
         <!-- CIB seven data format (e.g. JSON) functionality -->
         <dependency>

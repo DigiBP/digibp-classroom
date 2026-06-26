@@ -8,6 +8,6 @@ package ch.fhnw.digibp.classroom.service;
 import onl.mrtn.camunda.http.HTTPConnect;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service("classroomHttpConnectService")
 public class HTTPConnectService extends HTTPConnect {
 }

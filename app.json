@@ -7,7 +7,11 @@
   "keywords": ["FHNW"],
   "env": {
     "CAMUNDA_ADMIN_PASSWORD": {
-      "description": "Camunda admin/demo user password. If you want to change it, you will have to replace it in the Heroku and the Camunda dashboard simultaneously.",
+      "description": "CIB seven admin/demo user password. If you want to change it, you will have to replace it in the Heroku and the CIB seven dashboard simultaneously.",
+      "generator": "secret"
+    },
+    "CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET": {
+      "description": "At least 155-character base64-decodable JWT secret shared by the CIB seven REST API and webclient.",
       "generator": "secret"
     },
     "CORS_ENABLED": {

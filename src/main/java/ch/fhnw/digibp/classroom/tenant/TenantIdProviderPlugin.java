@@ -5,9 +5,9 @@
 
 package ch.fhnw.digibp.classroom.tenant;
 
-import org.camunda.bpm.engine.ProcessEngine;
-import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
-import org.camunda.bpm.engine.impl.cfg.ProcessEnginePlugin;
+import org.cibseven.bpm.engine.ProcessEngine;
+import org.cibseven.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
+import org.cibseven.bpm.engine.impl.cfg.ProcessEnginePlugin;
 
 public class TenantIdProviderPlugin implements ProcessEnginePlugin {
 

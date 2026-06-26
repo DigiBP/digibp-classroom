@@ -5,18 +5,18 @@
 
 package ch.fhnw.digibp.classroom.service;
 
-import org.camunda.bpm.engine.AuthorizationService;
-import org.camunda.bpm.engine.IdentityService;
-import org.camunda.bpm.engine.authorization.Authorization;
-import org.camunda.bpm.engine.authorization.Permission;
-import org.camunda.bpm.engine.authorization.Resource;
-import org.camunda.bpm.engine.identity.Group;
+import org.cibseven.bpm.engine.AuthorizationService;
+import org.cibseven.bpm.engine.IdentityService;
+import org.cibseven.bpm.engine.authorization.Authorization;
+import org.cibseven.bpm.engine.authorization.Permission;
+import org.cibseven.bpm.engine.authorization.Resource;
+import org.cibseven.bpm.engine.identity.Group;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.logging.Logger;
 
-@Service
+@Service("classroomGroupService")
 public class GroupService {
     @Autowired
     private IdentityService identityService;

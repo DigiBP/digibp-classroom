@@ -5,13 +5,13 @@
 
 package ch.fhnw.digibp.classroom.adapter;
 
-import org.camunda.bpm.engine.RuntimeService;
-import org.camunda.bpm.engine.delegate.DelegateExecution;
-import org.camunda.bpm.engine.delegate.Expression;
-import org.camunda.bpm.engine.delegate.JavaDelegate;
-import org.camunda.bpm.engine.impl.cfg.IdGenerator;
-import org.camunda.bpm.engine.impl.el.FixedValue;
-import org.camunda.bpm.engine.impl.util.EnsureUtil;
+import org.cibseven.bpm.engine.RuntimeService;
+import org.cibseven.bpm.engine.delegate.DelegateExecution;
+import org.cibseven.bpm.engine.delegate.Expression;
+import org.cibseven.bpm.engine.delegate.JavaDelegate;
+import org.cibseven.bpm.engine.impl.cfg.IdGenerator;
+import org.cibseven.bpm.engine.impl.el.FixedValue;
+import org.cibseven.bpm.engine.impl.util.EnsureUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

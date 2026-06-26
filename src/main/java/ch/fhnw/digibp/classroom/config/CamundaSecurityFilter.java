@@ -5,7 +5,7 @@
 
 package ch.fhnw.digibp.classroom.config;
 
-import org.camunda.bpm.engine.rest.security.auth.ProcessEngineAuthenticationFilter;
+import org.cibseven.bpm.engine.rest.security.auth.ProcessEngineAuthenticationFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +21,7 @@ public class CamundaSecurityFilter {
         registration.setName("camunda-auth");
         registration.setFilter(getProcessEngineAuthenticationFilter());
         registration.addInitParameter("authentication-provider",
-                "org.camunda.bpm.engine.rest.security.auth.impl.HttpBasicAuthenticationProvider");
+                "org.cibseven.bpm.engine.rest.security.auth.impl.HttpBasicAuthenticationProvider");
         //registration.addUrlPatterns("/rest/*");
         registration.addUrlPatterns("/classroom/*");
         return registration;

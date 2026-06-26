@@ -7,10 +7,10 @@ package ch.fhnw.digibp.classroom.generator;
 
 import ch.fhnw.digibp.classroom.service.GroupService;
 import ch.fhnw.digibp.classroom.service.TaskFilterAuthService;
-import org.camunda.bpm.engine.IdentityService;
-import org.camunda.bpm.engine.authorization.Permission;
-import org.camunda.bpm.engine.authorization.Permissions;
-import org.camunda.bpm.engine.authorization.Resources;
+import org.cibseven.bpm.engine.IdentityService;
+import org.cibseven.bpm.engine.authorization.Permission;
+import org.cibseven.bpm.engine.authorization.Permissions;
+import org.cibseven.bpm.engine.authorization.Resources;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -6,8 +6,8 @@
 package onl.mrtn.camunda.http.plugin;
 
 import onl.mrtn.camunda.http.HTTPConnect;
-import org.camunda.bpm.engine.delegate.DelegateExecution;
-import org.camunda.bpm.engine.delegate.ExecutionListener;
+import org.cibseven.bpm.engine.delegate.DelegateExecution;
+import org.cibseven.bpm.engine.delegate.ExecutionListener;
 
 public class NotifyExternalTaskStartListener implements ExecutionListener {
 

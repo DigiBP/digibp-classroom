@@ -5,11 +5,11 @@
 
 package ch.fhnw.digibp.classroom.service;
 
-import org.camunda.bpm.engine.RuntimeService;
-import org.camunda.bpm.engine.delegate.DelegateExecution;
-import org.camunda.bpm.engine.impl.cfg.IdGenerator;
-import org.camunda.bpm.engine.runtime.Execution;
-import org.camunda.bpm.engine.runtime.ExecutionQuery;
+import org.cibseven.bpm.engine.RuntimeService;
+import org.cibseven.bpm.engine.delegate.DelegateExecution;
+import org.cibseven.bpm.engine.impl.cfg.IdGenerator;
+import org.cibseven.bpm.engine.runtime.Execution;
+import org.cibseven.bpm.engine.runtime.ExecutionQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

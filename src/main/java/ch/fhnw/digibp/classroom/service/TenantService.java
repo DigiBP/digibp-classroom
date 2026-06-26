@@ -5,14 +5,14 @@
 
 package ch.fhnw.digibp.classroom.service;
 
-import org.camunda.bpm.engine.IdentityService;
-import org.camunda.bpm.engine.identity.Tenant;
+import org.cibseven.bpm.engine.IdentityService;
+import org.cibseven.bpm.engine.identity.Tenant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.logging.Logger;
 
-@Service
+@Service("classroomTenantService")
 public class TenantService {
     @Autowired
     private IdentityService identityService;

@@ -12,7 +12,7 @@ import ch.fhnw.digibp.classroom.service.DeploymentService;
 import ch.fhnw.digibp.classroom.service.GroupService;
 import ch.fhnw.digibp.classroom.service.TenantService;
 import ch.fhnw.digibp.classroom.service.UserService;
-import org.camunda.bpm.engine.IdentityService;
+import org.cibseven.bpm.engine.IdentityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -5,18 +5,18 @@
 
 package ch.fhnw.digibp.classroom.service;
 
-import org.camunda.bpm.engine.AuthorizationService;
-import org.camunda.bpm.engine.FilterService;
-import org.camunda.bpm.engine.authorization.Authorization;
-import org.camunda.bpm.engine.authorization.Permission;
-import org.camunda.bpm.engine.filter.Filter;
+import org.cibseven.bpm.engine.AuthorizationService;
+import org.cibseven.bpm.engine.FilterService;
+import org.cibseven.bpm.engine.authorization.Authorization;
+import org.cibseven.bpm.engine.authorization.Permission;
+import org.cibseven.bpm.engine.filter.Filter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import static org.camunda.bpm.engine.authorization.Permissions.READ;
-import static org.camunda.bpm.engine.authorization.Resources.FILTER;
+import static org.cibseven.bpm.engine.authorization.Permissions.READ;
+import static org.cibseven.bpm.engine.authorization.Resources.FILTER;
 
-@Service
+@Service("classroomTaskFilterAuthService")
 public class TaskFilterAuthService {
 
     @Autowired

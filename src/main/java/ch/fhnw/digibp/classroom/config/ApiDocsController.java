@@ -25,8 +25,8 @@ public class ApiDocsController {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    @GetMapping(value = "/camunda-rest/openapi.json", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getCamundaApiDocs(HttpServletRequest request) throws Exception {
+    @GetMapping(value = "/cibseven-rest/openapi.json", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> getCibSevenApiDocs(HttpServletRequest request) throws Exception {
         String[] candidates = new String[] {
                 "classpath*:META-INF/resources/openapi.json",
                 "classpath*:openapi.json",
@@ -42,7 +42,7 @@ public class ApiDocsController {
                 }
 
                 String resourcePath = resource.getURL().toString().toLowerCase();
-                if (!resourcePath.contains("camunda") && !resourcePath.contains("engine-rest-openapi")) {
+                if (!resourcePath.contains("cibseven") && !resourcePath.contains("engine-rest-openapi")) {
                     continue;
                 }
 
@@ -90,7 +90,7 @@ public class ApiDocsController {
                         JsonNode server = servers.get(i);
                         if (server.isObject()) {
                             ((ObjectNode) server).put("url", baseUrl + "/engine-rest");
-                            ((ObjectNode) server).put("description", "DigiBP Classroom - Camunda REST API");
+                            ((ObjectNode) server).put("description", "DigiBP Classroom - CIB seven REST API");
                         }
                     }
                 }

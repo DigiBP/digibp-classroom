@@ -5,13 +5,13 @@
 
 package ch.fhnw.digibp.classroom.tenant;
 
-import org.camunda.bpm.engine.IdentityService;
-import org.camunda.bpm.engine.impl.cfg.multitenancy.TenantIdProvider;
-import org.camunda.bpm.engine.impl.cfg.multitenancy.TenantIdProviderCaseInstanceContext;
-import org.camunda.bpm.engine.impl.cfg.multitenancy.TenantIdProviderHistoricDecisionInstanceContext;
-import org.camunda.bpm.engine.impl.cfg.multitenancy.TenantIdProviderProcessInstanceContext;
-import org.camunda.bpm.engine.impl.context.Context;
-import org.camunda.bpm.engine.impl.identity.Authentication;
+import org.cibseven.bpm.engine.IdentityService;
+import org.cibseven.bpm.engine.impl.cfg.multitenancy.TenantIdProvider;
+import org.cibseven.bpm.engine.impl.cfg.multitenancy.TenantIdProviderCaseInstanceContext;
+import org.cibseven.bpm.engine.impl.cfg.multitenancy.TenantIdProviderHistoricDecisionInstanceContext;
+import org.cibseven.bpm.engine.impl.cfg.multitenancy.TenantIdProviderProcessInstanceContext;
+import org.cibseven.bpm.engine.impl.context.Context;
+import org.cibseven.bpm.engine.impl.identity.Authentication;
 
 import java.util.List;
 

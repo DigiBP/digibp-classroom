@@ -5,8 +5,8 @@
 
 package onl.mrtn.camunda.http.plugin;
 
-import org.camunda.bpm.engine.impl.cfg.AbstractProcessEnginePlugin;
-import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
+import org.cibseven.bpm.engine.impl.cfg.AbstractProcessEnginePlugin;
+import org.cibseven.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 
 import java.util.ArrayList;
 

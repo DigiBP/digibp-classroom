@@ -17,7 +17,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>17</java.version>
         <spring.boot.version>3.5.11</spring.boot.version>
-        <camunda.version>7.24.0</camunda.version>
+        <cibseven.version>2.2.0</cibseven.version>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
     </properties>
 
@@ -31,9 +31,9 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.camunda.bpm</groupId>
-                <artifactId>camunda-bom</artifactId>
-                <version>${camunda.version}</version>
+                <groupId>org.cibseven.bpm</groupId>
+                <artifactId>cibseven-bom</artifactId>
+                <version>${cibseven.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -42,50 +42,50 @@
 
 
     <dependencies>
-        <!-- Camunda Spring Boot -->
+        <!-- CIB seven Spring Boot -->
         <dependency>
-            <groupId>org.camunda.bpm.springboot</groupId>
-            <artifactId>camunda-bpm-spring-boot-starter</artifactId>
+            <groupId>org.cibseven.bpm.springboot</groupId>
+            <artifactId>cibseven-bpm-spring-boot-starter</artifactId>
         </dependency>
 
-        <!-- Camunda REST API -->
+        <!-- CIB seven REST API -->
         <dependency>
-            <groupId>org.camunda.bpm.springboot</groupId>
-            <artifactId>camunda-bpm-spring-boot-starter-rest</artifactId>
+            <groupId>org.cibseven.bpm.springboot</groupId>
+            <artifactId>cibseven-bpm-spring-boot-starter-rest</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.camunda.bpm</groupId>
-            <artifactId>camunda-engine-rest-openapi</artifactId>
-            <version>${camunda.version}</version>
-        </dependency>
-
-        <!-- Camunda Web Apps (e.g. Cockpit, Tasklist, Admin, etc.) -->
-        <dependency>
-            <groupId>org.camunda.bpm.springboot</groupId>
-            <artifactId>camunda-bpm-spring-boot-starter-webapp</artifactId>
+            <groupId>org.cibseven.bpm</groupId>
+            <artifactId>cibseven-engine-rest-openapi</artifactId>
+            <version>${cibseven.version}</version>
         </dependency>
 
-        <!-- Camunda HTTP/REST connector -->
+        <!-- CIB seven Web Apps -->
         <dependency>
-            <groupId>org.camunda.bpm</groupId>
-            <artifactId>camunda-engine-plugin-connect</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.camunda.connect</groupId>
-            <artifactId>camunda-connect-http-client</artifactId>
+            <groupId>org.cibseven.bpm.springboot</groupId>
+            <artifactId>cibseven-bpm-spring-boot-starter-webapp</artifactId>
         </dependency>
 
-        <!-- Camunda data format (e.g. JSON) functionality -->
+        <!-- CIB seven HTTP/REST connector -->
         <dependency>
-            <groupId>org.camunda.bpm</groupId>
-            <artifactId>camunda-engine-plugin-spin</artifactId>
+            <groupId>org.cibseven.bpm</groupId>
+            <artifactId>cibseven-engine-plugin-connect</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.camunda.spin</groupId>
-            <artifactId>camunda-spin-dataformat-all</artifactId>
+            <groupId>org.cibseven.connect</groupId>
+            <artifactId>cibseven-connect-http-client</artifactId>
         </dependency>
 
-        <!-- JDK 11 onwards for Camunda and PMML-->
+        <!-- CIB seven data format (e.g. JSON) functionality -->
+        <dependency>
+            <groupId>org.cibseven.bpm</groupId>
+            <artifactId>cibseven-engine-plugin-spin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.cibseven.spin</groupId>
+            <artifactId>cibseven-spin-dataformat-all</artifactId>
+        </dependency>
+
+        <!-- JDK 11 onwards for CIB seven and PMML-->
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
@@ -151,14 +151,6 @@
             <optional>true</optional>
         </dependency>
     </dependencies>
-
-    <repositories>
-        <repository>
-            <id>camunda-bpm-nexus</id>
-            <name>Camunda Maven Repository</name>
-            <url>https://app.camunda.com/nexus/content/groups/public</url>
-        </repository>
-    </repositories>
 
     <build>
         <finalName>${project.artifactId}</finalName>

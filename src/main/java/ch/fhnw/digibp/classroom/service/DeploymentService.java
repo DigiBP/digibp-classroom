@@ -5,8 +5,8 @@
 
 package ch.fhnw.digibp.classroom.service;
 
-import org.camunda.bpm.engine.RepositoryService;
-import org.camunda.bpm.engine.repository.*;
+import org.cibseven.bpm.engine.RepositoryService;
+import org.cibseven.bpm.engine.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-@Service
+@Service("classroomDeploymentService")
 public class DeploymentService {
 
     @Inject

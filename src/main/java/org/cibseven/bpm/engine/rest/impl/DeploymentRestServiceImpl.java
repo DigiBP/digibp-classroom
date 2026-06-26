@@ -2,28 +2,28 @@
  * Copyright (c) 2019. University of Applied Sciences and Arts Northwestern Switzerland FHNW.
  * All rights reserved.
  */
-package org.camunda.bpm.engine.rest.impl;
+package org.cibseven.bpm.engine.rest.impl;
 
 import ch.fhnw.digibp.classroom.config.ApplicationContextHolder;
 import ch.fhnw.digibp.classroom.config.ClassroomProperties;
 import ch.fhnw.digibp.classroom.service.TenantService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.camunda.bpm.engine.ProcessEngine;
-import org.camunda.bpm.engine.impl.calendar.DateTimeUtil;
-import org.camunda.bpm.engine.repository.Deployment;
-import org.camunda.bpm.engine.repository.DeploymentBuilder;
-import org.camunda.bpm.engine.repository.DeploymentQuery;
-import org.camunda.bpm.engine.repository.DeploymentWithDefinitions;
-import org.camunda.bpm.engine.rest.DeploymentRestService;
-import org.camunda.bpm.engine.rest.dto.CountResultDto;
-import org.camunda.bpm.engine.rest.dto.repository.DeploymentDto;
-import org.camunda.bpm.engine.rest.dto.repository.DeploymentQueryDto;
-import org.camunda.bpm.engine.rest.dto.repository.DeploymentWithDefinitionsDto;
-import org.camunda.bpm.engine.rest.exception.InvalidRequestException;
-import org.camunda.bpm.engine.rest.mapper.MultipartFormData;
-import org.camunda.bpm.engine.rest.mapper.MultipartFormData.FormPart;
-import org.camunda.bpm.engine.rest.sub.repository.DeploymentResource;
-import org.camunda.bpm.engine.rest.sub.repository.impl.DeploymentResourceImpl;
+import org.cibseven.bpm.engine.ProcessEngine;
+import org.cibseven.bpm.engine.impl.calendar.DateTimeUtil;
+import org.cibseven.bpm.engine.repository.Deployment;
+import org.cibseven.bpm.engine.repository.DeploymentBuilder;
+import org.cibseven.bpm.engine.repository.DeploymentQuery;
+import org.cibseven.bpm.engine.repository.DeploymentWithDefinitions;
+import org.cibseven.bpm.engine.rest.DeploymentRestService;
+import org.cibseven.bpm.engine.rest.dto.CountResultDto;
+import org.cibseven.bpm.engine.rest.dto.repository.DeploymentDto;
+import org.cibseven.bpm.engine.rest.dto.repository.DeploymentQueryDto;
+import org.cibseven.bpm.engine.rest.dto.repository.DeploymentWithDefinitionsDto;
+import org.cibseven.bpm.engine.rest.exception.InvalidRequestException;
+import org.cibseven.bpm.engine.rest.mapper.MultipartFormData;
+import org.cibseven.bpm.engine.rest.mapper.MultipartFormData.FormPart;
+import org.cibseven.bpm.engine.rest.sub.repository.DeploymentResource;
+import org.cibseven.bpm.engine.rest.sub.repository.impl.DeploymentResourceImpl;
 
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response.Status;

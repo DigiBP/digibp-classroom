@@ -6,10 +6,10 @@
 package ch.fhnw.digibp.classroom.generator;
 
 import ch.fhnw.digibp.classroom.service.TaskFilterAuthService;
-import org.camunda.bpm.engine.FilterService;
-import org.camunda.bpm.engine.TaskService;
-import org.camunda.bpm.engine.filter.Filter;
-import org.camunda.bpm.engine.task.TaskQuery;
+import org.cibseven.bpm.engine.FilterService;
+import org.cibseven.bpm.engine.TaskService;
+import org.cibseven.bpm.engine.filter.Filter;
+import org.cibseven.bpm.engine.task.TaskQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

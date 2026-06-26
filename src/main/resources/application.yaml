@@ -10,9 +10,14 @@ camunda:
     generic-properties:
       properties:
         historyTimeToLive: "P180D"
+        useCibSevenNamespaceInScripting: true
+        useCibSevenNamespaceInReflection: true
     webapp:
       header-security:
         content-security-policy-value: font-src 'self' data:;
+  bpmn:
+    authorization:
+      enabled: true
 #    webapp:
 #      application-path: /
 spring:
@@ -32,12 +37,25 @@ springdoc:
     disable-swagger-default-url: true
     urls-primary-name: Classroom API
     urls:
-      - name: Camunda REST API
-        url: /camunda-rest/openapi.json
+      - name: CIB seven REST API
+        url: /cibseven-rest/openapi.json
+
+cibseven:
+  webclient:
+    authentication:
+      jwtSecret: ${CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET:}
+    engine-rest:
+      url: http://localhost:8080
+      path: /engine-rest
+      display-name: Local Server
+      tooltip: Embedded CIB seven engine
+    engineRest:
+      url: http://localhost:8080
+      path: /engine-rest
 #  jersey:
 #    application-path: /rest
 #  datasource:
-#    url: jdbc:h2:file:./data/camunda
+#    url: jdbc:h2:file:./data/cibseven
 #    username: sa
 #    password: sa
 ## Uncomment the following lines to enable the h2 DB console:

@@ -5,13 +5,13 @@
 
 package onl.mrtn.camunda.http.plugin;
 
-import org.camunda.bpm.engine.impl.bpmn.parser.AbstractBpmnParseListener;
-import org.camunda.bpm.engine.impl.bpmn.parser.BpmnParseListener;
-import org.camunda.bpm.engine.impl.bpmn.parser.BpmnParser;
-import org.camunda.bpm.engine.impl.pvm.process.ActivityImpl;
-import org.camunda.bpm.engine.impl.pvm.process.ScopeImpl;
-import org.camunda.bpm.engine.impl.util.xml.Element;
-import org.camunda.bpm.engine.impl.util.xml.Namespace;
+import org.cibseven.bpm.engine.impl.bpmn.parser.AbstractBpmnParseListener;
+import org.cibseven.bpm.engine.impl.bpmn.parser.BpmnParseListener;
+import org.cibseven.bpm.engine.impl.bpmn.parser.BpmnParser;
+import org.cibseven.bpm.engine.impl.pvm.process.ActivityImpl;
+import org.cibseven.bpm.engine.impl.pvm.process.ScopeImpl;
+import org.cibseven.bpm.engine.impl.util.xml.Element;
+import org.cibseven.bpm.engine.impl.util.xml.Namespace;
 
 import java.util.List;
 

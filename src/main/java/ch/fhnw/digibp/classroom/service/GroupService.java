@@ -65,4 +65,18 @@ public class GroupService {
             }
         }
     }
+
+    public void createGlobalAuthorization(Permission permission, Resource resource, String resourceId) {
+        Authorization authorization = authorizationService.createAuthorizationQuery()
+                .resourceType(resource).resourceId(resourceId).list().stream()
+                .filter(item -> item.getAuthorizationType() == Authorization.AUTH_TYPE_GLOBAL)
+                .findFirst().orElse(null);
+        if (authorization == null) {
+            authorization = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_GLOBAL);
+            authorization.setResource(resource);
+            authorization.setResourceId(resourceId);
+        }
+        authorization.addPermission(permission);
+        authorizationService.saveAuthorization(authorization);
+    }
 }

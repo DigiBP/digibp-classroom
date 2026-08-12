@@ -37,6 +37,8 @@ public class GroupGenerator {
     @PostConstruct
     public void init() {
 
+        groupService.createGlobalAuthorization(Permissions.READ, Resources.AUTHORIZATION, "*");
+
         if(identityService.createGroupQuery().groupId("owner").singleResult() != null){
             LOGGER.info("Not creating any groups.");
             return;
@@ -79,7 +81,6 @@ public class GroupGenerator {
         groupService.createGrantGroupAuthorization(new String[]{"owner", "manager", "analyst"}, new Permission[]{Permissions.ALL}, Resources.REPORT, new String[]{"*"});
 
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.DEPLOYMENT, new String[]{"*"});
-        groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.READ}, Resources.AUTHORIZATION, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.READ}, Resources.GROUP, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.READ}, Resources.USER, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.READ}, Resources.TENANT, new String[]{"*"});

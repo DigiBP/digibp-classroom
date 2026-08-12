@@ -40,6 +40,8 @@ public class UserGeneratorShowcase {
     @PostConstruct
     public void init() {
 
+        userService.synchronizeGroupTenantMemberships();
+
         if(identityService.createUserQuery().userId("giulia").singleResult() != null){
             LOGGER.info("Not creating any showcase users.");
             return;

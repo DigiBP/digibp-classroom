@@ -36,10 +36,16 @@ public class TaskFilterAuthService {
     public void createDenyGroupAuthorization(String[] groupIds, Permission[] permissions, String filterName) {
         for (String groupId : groupIds) {
             Filter tasksFilter = filterService.createFilterQuery().filterName(filterName).singleResult();
-            Authorization authorization = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_REVOKE);
-            authorization.setGroupId(groupId);
-            authorization.setResource(FILTER);
-            authorization.setResourceId(tasksFilter.getId());
+            Authorization authorization = authorizationService.createAuthorizationQuery()
+                    .groupIdIn(groupId).resourceType(FILTER).resourceId(tasksFilter.getId()).list().stream()
+                    .filter(item -> item.getAuthorizationType() == Authorization.AUTH_TYPE_REVOKE)
+                    .findFirst().orElse(null);
+            if (authorization == null) {
+                authorization = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_REVOKE);
+                authorization.setGroupId(groupId);
+                authorization.setResource(FILTER);
+                authorization.setResourceId(tasksFilter.getId());
+            }
             for (Permission permission : permissions) {
                 authorization.removePermission(permission);
             }

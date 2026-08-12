@@ -6,6 +6,8 @@
 package ch.fhnw.digibp.classroom.service;
 
 import org.cibseven.bpm.engine.IdentityService;
+import org.cibseven.bpm.engine.identity.Group;
+import org.cibseven.bpm.engine.identity.Tenant;
 import org.cibseven.bpm.engine.identity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,6 +50,9 @@ public class UserService {
         }
         if(tenantId!=null){
             addUserToTenant(userId, tenantId);
+            if (groupIds != null) {
+                addGroupsToTenant(groupIds, tenantId);
+            }
         }
         return user.getId();
     }
@@ -66,6 +71,24 @@ public class UserService {
             throw new Exception("User " + userId + " does not exist, could not create tenant membership.");
         }
         identityService.createTenantUserMembership(tenantId, userId);
+    }
+
+    public void addGroupsToTenant(String[] groupIds, String tenantId) {
+        for (String groupId : groupIds) {
+            if (identityService.createGroupQuery().groupId(groupId).count() > 0
+                    && identityService.createGroupQuery().groupId(groupId).memberOfTenant(tenantId).count() == 0) {
+                identityService.createTenantGroupMembership(tenantId, groupId);
+            }
+        }
+    }
+
+    public void synchronizeGroupTenantMemberships() {
+        for (Tenant tenant : identityService.createTenantQuery().list()) {
+            for (User user : identityService.createUserQuery().memberOfTenant(tenant.getId()).list()) {
+                List<Group> groups = identityService.createGroupQuery().groupMember(user.getId()).list();
+                addGroupsToTenant(groups.stream().map(Group::getId).toArray(String[]::new), tenant.getId());
+            }
+        }
     }
 
     public List<String> removeUsers(String tenantId){

@@ -14,6 +14,7 @@ import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -36,7 +37,7 @@ public class DeploymentService {
             );
             
             String filename = file.getOriginalFilename();
-            if (!isZipFile && filename != null && filename.toLowerCase().endsWith(".zip")) {
+            if (!isZipFile && filename != null && filename.toLowerCase(Locale.ROOT).endsWith(".zip")) {
                 isZipFile = true;
             }
             

@@ -4,6 +4,8 @@
 
 Spring Boot application providing a tenant-aware CIB seven classroom environment with Tasklist, Cockpit, Admin and Modeler.
 
+API documentation is available through Swagger UI at `http://localhost:8080/apis`. It provides separate definitions for the DigiBP Message API, DigiBP Classroom API and CIB seven REST API.
+
 ## Build and run
 
 The application requires Java 17 and Maven.
@@ -23,8 +25,9 @@ Local settings belong in `src/main/resources/application-local.yaml`. The `prod`
 | `SPRING_DATASOURCE_USERNAME` | yes | Database user |
 | `SPRING_DATASOURCE_PASSWORD` | yes | Database password |
 | `CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET` | yes | Base64-decodable JWT secret shared by the webclient and REST API |
-| `CIBSEVEN_ADMIN_PASSWORD` | recommended | Password of the initial `demo` administrator; defaults to `demo` |
-| `CORS_ENABLED` | no | Enables CORS; defaults to `true` in the `prod` profile |
+| `CIBSEVEN_ENGINE_REST_URL` | yes in production | Public application URL without `/engine-rest`, for example `https://example.org` |
+| `CIBSEVEN_ADMIN_PASSWORD` | yes in production | Password of the initial `demo` administrator |
+| `CORS_ENABLED` | no | Enables CORS; defaults to `false` in the `prod` profile |
 | `CORS_ORIGIN` | no | Allowed CORS origin; defaults to `*` |
 | `OPENAI_API_KEY` | when using AI tasks | API key for the AI Agent connector |
 | `OPENAI_BASE_URL` | no | OpenAI-compatible API base URL |
@@ -46,7 +49,9 @@ docker run --rm -p 8080:8080 \
   -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/classroom \
   -e SPRING_DATASOURCE_USERNAME=classroom \
   -e SPRING_DATASOURCE_PASSWORD=secret \
-  -e CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET=base64-secret \
+  -e CIBSEVEN_ADMIN_PASSWORD=secret \
+  -e CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET="$(openssl rand -base64 64)" \
+  -e CIBSEVEN_ENGINE_REST_URL=http://localhost:8080 \
   digibp-classroom
 ```
 

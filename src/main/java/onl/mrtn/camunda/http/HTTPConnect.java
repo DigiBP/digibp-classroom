@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -102,13 +103,13 @@ public class HTTPConnect {
 
         switch (connection.getResponseCode()) {
             case 200, 201 -> {
-                BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 StringBuilder out = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    out.append(line).append("\n");
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        out.append(line).append("\n");
+                    }
                 }
-                br.close();
                 try {
                     ObjectMapper objectMapper = new ObjectMapper();
                     execution.setVariableLocal("api_response", objectMapper.readValue(out.toString(), new TypeReference<>() {
@@ -140,7 +141,7 @@ public class HTTPConnect {
         connection.addRequestProperty("Content-Type", "application/json");
 
         try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = Spin.JSON(data).toString().getBytes();
+            byte[] input = Spin.JSON(data).toString().getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         } catch (UnknownHostException e) {
             logger.info("A valid \"URL\" field must be injected an URL.");
@@ -178,7 +179,7 @@ public class HTTPConnect {
         }
 
         try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = jsonInputString.getBytes();
+            byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         } catch (UnknownHostException e) {
             logger.info("A valid \"URL\" field must be injected an URL.");

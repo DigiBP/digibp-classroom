@@ -16,17 +16,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 @RestController
 public class ApiDocsController {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @GetMapping(value = "/cibseven-rest/openapi.json", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getCibSevenApiDocs(HttpServletRequest request) throws Exception {
+    public ResponseEntity<String> getCibSevenApiDocs() throws Exception {
         String[] candidates = new String[] {
                 "classpath*:META-INF/resources/openapi.json",
                 "classpath*:openapi.json",
@@ -41,14 +41,14 @@ public class ApiDocsController {
                     continue;
                 }
 
-                String resourcePath = resource.getURL().toString().toLowerCase();
+                String resourcePath = resource.getURL().toString().toLowerCase(Locale.ROOT);
                 if (!resourcePath.contains("cibseven") && !resourcePath.contains("engine-rest-openapi")) {
                     continue;
                 }
 
                 try (InputStream in = resource.getInputStream()) {
                     String openapiJson = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-                    String modifiedJson = updateServerUrls(openapiJson, request);
+                    String modifiedJson = useEmbeddedEngineServer(openapiJson);
                     return ResponseEntity.ok()
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(modifiedJson);
@@ -59,57 +59,13 @@ public class ApiDocsController {
         return ResponseEntity.notFound().build();
     }
 
-    private String updateServerUrls(String openapiJson, HttpServletRequest request) throws Exception {
-        try {
-            JsonNode root = objectMapper.readTree(openapiJson);
-            
-            String scheme = request.getScheme();
-            String host = request.getServerName();
-            int port = request.getServerPort();
-            
-            // Check for X-Forwarded-Proto header (from reverse proxy for HTTPS)
-            String forwardedProto = request.getHeader("X-Forwarded-Proto");
-            if (forwardedProto != null && !forwardedProto.isEmpty()) {
-                scheme = forwardedProto.toLowerCase();
-            }
-            
-            // Check for X-Forwarded-Host header (from reverse proxy for production domain)
-            String forwardedHost = request.getHeader("X-Forwarded-Host");
-            if (forwardedHost != null && !forwardedHost.isEmpty()) {
-                host = forwardedHost;
-                port = getPortFromScheme(scheme);
-            }
-            
-            String baseUrl = buildBaseUrl(scheme, host, port);
-            
-            // Update servers array
-            if (root.has("servers")) {
-                ArrayNode servers = (ArrayNode) root.get("servers");
-                if (servers.isArray()) {
-                    for (int i = 0; i < servers.size(); i++) {
-                        JsonNode server = servers.get(i);
-                        if (server.isObject()) {
-                            ((ObjectNode) server).put("url", baseUrl + "/engine-rest");
-                            ((ObjectNode) server).put("description", "DigiBP Classroom - CIB seven REST API");
-                        }
-                    }
-                }
-            }
-            
-            return objectMapper.writeValueAsString(root);
-        } catch (Exception e) {
-            return openapiJson;
-        }
-    }
-
-    private String buildBaseUrl(String scheme, String host, int port) {
-        if ((scheme.equals("https") && port == 443) || (scheme.equals("http") && port == 80)) {
-            return scheme + "://" + host;
-        }
-        return scheme + "://" + host + ":" + port;
-    }
-
-    private int getPortFromScheme(String scheme) {
-        return scheme.equals("https") ? 443 : 80;
+    private String useEmbeddedEngineServer(String openapiJson) throws Exception {
+        JsonNode root = OBJECT_MAPPER.readTree(openapiJson);
+        ArrayNode servers = OBJECT_MAPPER.createArrayNode();
+        ObjectNode server = servers.addObject();
+        server.put("url", "/engine-rest");
+        server.put("description", "Embedded CIB seven process engine");
+        ((ObjectNode) root).set("servers", servers);
+        return OBJECT_MAPPER.writeValueAsString(root);
     }
 }

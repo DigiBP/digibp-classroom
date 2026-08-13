@@ -33,9 +33,9 @@ server:
 springdoc:
   swagger-ui:
     enabled: true
-    path: /config
+    path: /apis
     disable-swagger-default-url: true
-    urls-primary-name: Classroom API
+    urls-primary-name: DigiBP Message API
     urls:
       - name: CIB seven REST API
         url: /cibseven-rest/openapi.json
@@ -45,12 +45,12 @@ cibseven:
     authentication:
       jwtSecret: ${CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET:}
     engine-rest:
-      url: http://localhost:8080
+      url: ${CIBSEVEN_ENGINE_REST_URL:http://localhost:8080}
       path: /engine-rest
-      display-name: Local Server
+      display-name: DigiBP Classroom
       tooltip: Embedded CIB seven engine
     engineRest:
-      url: http://localhost:8080
+      url: ${CIBSEVEN_ENGINE_REST_URL:http://localhost:8080}
       path: /engine-rest
     modeler:
       enabled: true

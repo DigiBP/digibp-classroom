@@ -8,7 +8,6 @@ package ch.fhnw.digibp.classroom.endpoint;
 import ch.fhnw.digibp.classroom.dto.UserDTO;
 import ch.fhnw.digibp.classroom.dto.UsersDTO;
 import ch.fhnw.digibp.classroom.service.DeploymentService;
-import ch.fhnw.digibp.classroom.service.GroupService;
 import ch.fhnw.digibp.classroom.service.TenantService;
 import ch.fhnw.digibp.classroom.service.UserService;
 import org.cibseven.bpm.engine.IdentityService;
@@ -21,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @RestController
@@ -38,9 +38,6 @@ public class ClassroomAPI {
 
     @Autowired
     private DeploymentService deploymentService;
-
-    @Autowired
-    private GroupService groupService;
 
     @GetMapping(path = "/user/showcase/generator", produces = "application/json")
     public ResponseEntity<List<String>> getUserShowcaseGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix){
@@ -87,7 +84,7 @@ public class ClassroomAPI {
             for (UserDTO.GroupId groupId : user.getGroupIds()){
                 groupIds.add(groupId.getGroupId());
             }
-            id = userService.addUser(user.getFirstName().replaceAll("\\s", "").toLowerCase()+user.getLastName().replaceAll("\\s", "").toLowerCase(), user.getPassword(), user.getFirstName(), user.getLastName(), "", groupIds.toArray(String[]::new), tenantId);
+            id = userService.addUser(user.getFirstName().replaceAll("\\s", "").toLowerCase(Locale.ROOT)+user.getLastName().replaceAll("\\s", "").toLowerCase(Locale.ROOT), user.getPassword(), user.getFirstName(), user.getLastName(), "", groupIds.toArray(String[]::new), tenantId);
             response.add("User with ID " + id + " generated.");
         }
         return response;
@@ -125,7 +122,7 @@ public class ClassroomAPI {
                     for (UserDTO.GroupId groupId : user.getGroupIds()){
                         groupIds.add(groupId.getGroupId());
                     }
-                    id = userService.addUser(tenantId+user.getFirstName().replaceAll("\\s", "").toLowerCase(), user.getPassword(), tenantId+" "+user.getFirstName(), user.getLastName(), "", groupIds.toArray(String[]::new), tenantId);
+                    id = userService.addUser(tenantId+user.getFirstName().replaceAll("\\s", "").toLowerCase(Locale.ROOT), user.getPassword(), tenantId+" "+user.getFirstName(), user.getLastName(), "", groupIds.toArray(String[]::new), tenantId);
                     response.add("User with ID " + id + " generated.");
                 }
             } catch (Exception e) {
@@ -191,7 +188,7 @@ public class ClassroomAPI {
         if(!isAdminAuthentication()){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        Map<String, UsersDTO> usersDTOMap = parseCSV(new BufferedReader(new InputStreamReader(file.getInputStream())));
+        Map<String, UsersDTO> usersDTOMap = parseCSV(new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)));
         List<String> response = new ArrayList<>();
         for (Map.Entry<String, UsersDTO> dtoEntry : usersDTOMap.entrySet()) {
             try {
@@ -202,16 +199,6 @@ public class ClassroomAPI {
             }
         }
         return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
-
-    @GetMapping(path = "/group", produces = "application/json")
-    public ResponseEntity<String> getGroup(@RequestParam(value = "groupId") String groupId, @RequestParam(value = "groupName") String groupName){
-        if(!isAdminAuthentication()){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        String response = groupService.addWorkflowGroup(groupId, groupName);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-
     }
 
     @PostMapping(path = "/deployment/generator", consumes = "multipart/form-data")
@@ -291,15 +278,6 @@ public class ClassroomAPI {
         }
         List<String> deploymentIds = deploymentService.deleteOldVersionTenantDeployments(tenantId);
         return new ResponseEntity<>(deploymentIds, HttpStatus.ACCEPTED);
-    }
-
-    @GetMapping(path = "/gc")
-    public ResponseEntity gc(){
-        if(!isAdminAuthentication()){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        System.gc();
-        return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
     private Boolean isAdminAuthentication(){

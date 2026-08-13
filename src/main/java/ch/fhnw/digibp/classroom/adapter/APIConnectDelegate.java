@@ -11,16 +11,12 @@ import org.cibseven.bpm.engine.delegate.Expression;
 import org.cibseven.bpm.engine.delegate.JavaDelegate;
 import org.cibseven.bpm.engine.impl.el.FixedValue;
 import org.cibseven.bpm.engine.impl.util.EnsureUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
 @Named("api_connect")
 public class APIConnectDelegate implements JavaDelegate {
-
-    private final Logger logger = LoggerFactory.getLogger(NotifyDelegate.class);
 
     private Expression api_connect_url;
     private Expression api_connect_authorization;

@@ -67,9 +67,4 @@ public class SecurityConfig {
             }
         };
     }
-
-    @Bean
-    public Filter httpsEnforcerFilter() {
-        return new HttpsFilter();
-    }
 }

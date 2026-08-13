@@ -5,32 +5,35 @@
 
 package ch.fhnw.digibp.classroom.config;
 
-import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class ApiDocumentationConfig {
 
     @Bean
-    public GroupedOpenApi classroomApi() {
+    public GroupedOpenApi messageApi() {
         return GroupedOpenApi.builder()
-                .group("classroom-api")
-                .displayName("Classroom API")
-                .pathsToMatch("/classroom/**", "/message/**")
-                .pathsToExclude("/engine-rest/**")
+                .group("message-api")
+                .displayName("DigiBP Message API")
+                .pathsToMatch("/message/**")
+                .addOpenApiCustomizer(openApi -> openApi.info(apiInfo("DigiBP Message API")))
                 .build();
     }
 
     @Bean
-    @Primary
-    public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("DigiBP Classroom API")
-                        .version("1.0.0"));
+    public GroupedOpenApi classroomApi() {
+        return GroupedOpenApi.builder()
+                .group("classroom-api")
+                .displayName("DigiBP Classroom API")
+                .pathsToMatch("/classroom/**")
+                .addOpenApiCustomizer(openApi -> openApi.info(apiInfo("DigiBP Classroom API")))
+                .build();
+    }
+
+    private Info apiInfo(String title) {
+        return new Info().title(title).version("1.0.0");
     }
 }

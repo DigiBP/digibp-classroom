@@ -12,8 +12,17 @@ server:
 camunda:
   bpm:
     admin-user:
-      password: ${CIBSEVEN_ADMIN_PASSWORD:demo}
+      password: ${CIBSEVEN_ADMIN_PASSWORD}
+
+cibseven:
+  webclient:
+    authentication:
+      jwtSecret: ${CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET}
+    engine-rest:
+      url: ${CIBSEVEN_ENGINE_REST_URL}
+    engineRest:
+      url: ${CIBSEVEN_ENGINE_REST_URL}
 
 cors:
-  enabled: ${CORS_ENABLED:true}
+  enabled: ${CORS_ENABLED:false}
   allowed-origin: ${CORS_ORIGIN:*}

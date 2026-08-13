@@ -7,6 +7,7 @@ package ch.fhnw.digibp.classroom.config;
 
 import org.cibseven.bpm.engine.rest.security.auth.ProcessEngineAuthenticationFilter;
 import org.cibseven.bpm.engine.IdentityService;
+import org.cibseven.bpm.engine.ProcessEngine;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
 import jakarta.servlet.Filter;
+
+import java.util.List;
 
 @Configuration
 public class CamundaSecurityFilter {
@@ -52,7 +55,18 @@ public class CamundaSecurityFilter {
 
     @Bean
     public Filter getProcessEngineAuthenticationFilter() {
-        return new ProcessEngineAuthenticationFilter();
+        return new ProcessEngineAuthenticationFilter() {
+            @Override
+            protected List<String> getTenantsOfUser(ProcessEngine engine, String userId) {
+                // Role groups are shared across all classroom tenants. Resolving tenant
+                // access through groups would therefore expose every tenant to a user.
+                return engine.getIdentityService().createTenantQuery()
+                        .userMember(userId)
+                        .list().stream()
+                        .map(tenant -> tenant.getId())
+                        .toList();
+            }
+        };
     }
 
     @Bean

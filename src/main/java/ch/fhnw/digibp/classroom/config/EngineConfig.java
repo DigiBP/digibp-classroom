@@ -5,8 +5,8 @@
 
 package ch.fhnw.digibp.classroom.config;
 
-import onl.mrtn.camunda.http.plugin.NotifyProcessEnginePlugin;
 import ch.fhnw.digibp.classroom.tenant.TenantIdProviderPlugin;
+import onl.mrtn.camunda.http.plugin.NotifyProcessEnginePlugin;
 import org.cibseven.bpm.engine.impl.cfg.ProcessEnginePlugin;
 import org.cibseven.bpm.spring.boot.starter.configuration.Ordering;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 @Configuration
-public class CamundaEngineConfig{
+public class EngineConfig {
 
     @Bean
     @Order(Ordering.DEFAULT_ORDER + 1)
@@ -26,5 +26,4 @@ public class CamundaEngineConfig{
     public static NotifyProcessEnginePlugin httpNotifyProcessEnginePluginConfiguration() {
         return new NotifyProcessEnginePlugin();
     }
-
 }

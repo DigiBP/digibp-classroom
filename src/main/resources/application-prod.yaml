@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+server:
+  forward-headers-strategy: native
+  compression:
+    enabled: true
+
+camunda:
+  bpm:
+    admin-user:
+      password: ${CIBSEVEN_ADMIN_PASSWORD:demo}
+
+cors:
+  enabled: ${CORS_ENABLED:true}
+  allowed-origin: ${CORS_ORIGIN:*}

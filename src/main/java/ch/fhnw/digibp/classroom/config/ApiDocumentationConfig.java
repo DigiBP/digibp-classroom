@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 @Configuration
-public class CamundaSwaggerConfig {
+public class ApiDocumentationConfig {
 
     @Bean
     public GroupedOpenApi classroomApi() {

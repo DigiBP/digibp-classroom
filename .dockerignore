@@ -1,1 +1,9 @@
-.git/
+.git
+.github
+.idea
+.mvn
+target
+*.iml
+*.log
+*.env
+**/application-local.yaml

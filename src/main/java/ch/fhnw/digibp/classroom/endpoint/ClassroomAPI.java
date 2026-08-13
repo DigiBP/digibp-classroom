@@ -5,7 +5,6 @@
 
 package ch.fhnw.digibp.classroom.endpoint;
 
-import ch.fhnw.digibp.classroom.config.ClassroomProperties;
 import ch.fhnw.digibp.classroom.dto.UserDTO;
 import ch.fhnw.digibp.classroom.dto.UsersDTO;
 import ch.fhnw.digibp.classroom.service.DeploymentService;
@@ -33,9 +32,6 @@ public class ClassroomAPI {
 
     @Autowired
     private TenantService tenantService;
-
-    @Autowired
-    private ClassroomProperties classroomProperties;
 
     @Autowired
     private IdentityService identityService;
@@ -218,20 +214,6 @@ public class ClassroomAPI {
 
     }
 
-    @GetMapping(path = "/properties")
-    public ResponseEntity<ClassroomProperties> getProperties(){
-        return new ResponseEntity<>(this.classroomProperties, HttpStatus.ACCEPTED);
-    }
-
-    @PutMapping(path = "/properties")
-    public ResponseEntity<ClassroomProperties> putProperties(@RequestBody ClassroomProperties classroomProperties){
-        if(!isAdminAuthentication()){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        this.classroomProperties = classroomProperties;
-        return new ResponseEntity<>(this.classroomProperties, HttpStatus.ACCEPTED);
-    }
-
     @PostMapping(path = "/deployment/generator", consumes = "multipart/form-data")
     public ResponseEntity<List<String>> postDeploymentGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestParam(value = "deployment name", required = false) String deploymentName, @RequestPart(value="files") List<MultipartFile> files) throws IOException {
         if(!isAdminAuthentication()){
@@ -239,6 +221,11 @@ public class ClassroomAPI {
         }
         if(deploymentName == null) {
             deploymentName = files.get(0).getOriginalFilename();
+        }
+        for (int number = firstId; number <= lastId; number++) {
+            if (!tenantService.tenantExists(prefix + number + suffix)) {
+                return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
+            }
         }
         List<String> deploymentIds = new ArrayList<>();
         for (int number=firstId; number<=lastId; number++) {
@@ -268,6 +255,9 @@ public class ClassroomAPI {
         }
         if(deploymentName == null) {
             deploymentName = files.get(0).getOriginalFilename();
+        }
+        if (tenantId.isBlank() || !tenantService.tenantExists(tenantId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
         }
         return new ResponseEntity<>(deploymentService.createTenantDeployment(tenantId, deploymentName, "ClassroomAPI by " + getCurrentUser(), files), HttpStatus.ACCEPTED);
     }

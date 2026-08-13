@@ -5,7 +5,6 @@
 package org.cibseven.bpm.engine.rest.impl;
 
 import ch.fhnw.digibp.classroom.config.ApplicationContextHolder;
-import ch.fhnw.digibp.classroom.config.ClassroomProperties;
 import ch.fhnw.digibp.classroom.service.TenantService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cibseven.bpm.engine.ProcessEngine;
@@ -143,21 +142,16 @@ public class DeploymentRestServiceImpl extends AbstractRestProcessEngineAware im
         }
 
         FormPart deploymentTenantId = payload.getNamedPart(TENANT_ID);
-        ClassroomProperties properties = ApplicationContextHolder.getBean(ClassroomProperties.class);
-        if (deploymentTenantId != null) {
-            if(properties.getDeploymentTenantIdMustExist()) {
-                TenantService tenantService = ApplicationContextHolder.getBean(TenantService.class);
-                String tenantId = deploymentTenantId.getTextContent();
-                if (!tenantService.tenantExists(tenantId)) {
-                    throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "Tenant id provided does not exist.");
-                }
-            }
-            deploymentBuilder.tenantId(deploymentTenantId.getTextContent());
-        }else{
-            if(!properties.getDeploymentWithoutTenantId()) {
-                throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "No tenant id provided in the deployment.");
-            }
+        if (deploymentTenantId == null || deploymentTenantId.getTextContent().isBlank()) {
+            throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "No tenant id provided in the deployment.");
         }
+
+        String tenantId = deploymentTenantId.getTextContent();
+        TenantService tenantService = ApplicationContextHolder.getBean(TenantService.class);
+        if (!tenantService.tenantExists(tenantId)) {
+            throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "Tenant id provided does not exist.");
+        }
+        deploymentBuilder.tenantId(tenantId);
 
         extractDuplicateFilteringForDeployment(payload, deploymentBuilder);
         return deploymentBuilder;

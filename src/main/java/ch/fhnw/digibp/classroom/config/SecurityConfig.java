@@ -5,25 +5,24 @@
 
 package ch.fhnw.digibp.classroom.config;
 
-import org.cibseven.bpm.engine.rest.security.auth.ProcessEngineAuthenticationFilter;
+import jakarta.servlet.Filter;
 import org.cibseven.bpm.engine.IdentityService;
 import org.cibseven.bpm.engine.ProcessEngine;
+import org.cibseven.bpm.engine.rest.security.auth.ProcessEngineAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
-import jakarta.servlet.Filter;
-
 import java.util.List;
 
 @Configuration
-public class CamundaSecurityFilter {
+public class SecurityConfig {
 
     private final IdentityService identityService;
 
-    public CamundaSecurityFilter(IdentityService identityService) {
+    public SecurityConfig(IdentityService identityService) {
         this.identityService = identityService;
     }
 
@@ -31,7 +30,7 @@ public class CamundaSecurityFilter {
     private String jwtSecret;
 
     @Bean
-    public FilterRegistrationBean processEngineAuthenticationFilter() {
+    public FilterRegistrationBean<Filter> processEngineAuthenticationFilter() {
         System.setProperty("cibseven.webclient.authentication.jwtSecret", jwtSecret);
         FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
         registration.setName("cibseven-auth");
@@ -70,7 +69,7 @@ public class CamundaSecurityFilter {
     }
 
     @Bean
-    public Filter httpsEnforcerFilter(){
+    public Filter httpsEnforcerFilter() {
         return new HttpsFilter();
     }
 }

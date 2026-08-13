@@ -1,18 +1,20 @@
-#Grab the alpine image with jdk-15
-FROM openjdk:15-alpine
-MAINTAINER Andreas Martin <andreas.martin@andreasmartin.ch>
-# Add our code
-ARG JAR_FILE=target/*.jar
-ADD ${JAR_FILE} app.jar
-# Expose is NOT supported by Heroku
-ARG PORT=8080
-ENV PORT $PORT
-EXPOSE $PORT
-# Run the image as a non-root user
-RUN adduser -D myuser
-USER myuser
-# Run the app.  CMD is required to run on Heroku
-ARG JAVA_OPTS=-Xmx300m
-ENV JAVA_OPTS $JAVA_OPTS
-# $PORT is set by Heroku
-CMD java -Dserver.port=$PORT $JAVA_OPTS -Dspring.profiles.active=prod -jar /app.jar
+FROM maven:3.9-eclipse-temurin-17 AS build
+
+WORKDIR /workspace
+COPY pom.xml .
+RUN mvn --batch-mode dependency:go-offline
+COPY src ./src
+RUN mvn --batch-mode --offline --skip-tests package
+
+FROM eclipse-temurin:17-jre-alpine
+
+RUN addgroup -S app && adduser -S -G app app
+WORKDIR /app
+COPY --from=build /workspace/target/digibp-classroom.jar app.jar
+
+USER app
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV SERVER_PORT=8080
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

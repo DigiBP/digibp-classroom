@@ -26,7 +26,10 @@ public class DeploymentService {
     private RepositoryService repositoryService;
 
     public String createTenantDeployment(String tenantId, String deploymentName, String creator, List<MultipartFile> files) throws IOException {
-        DeploymentBuilder deploymentBuilder = repositoryService.createDeployment().tenantId(tenantId).source(creator).name(deploymentName);
+        DeploymentBuilder deploymentBuilder = repositoryService.createDeployment().source(creator).name(deploymentName);
+        if (tenantId != null && !tenantId.isBlank()) {
+            deploymentBuilder.tenantId(tenantId);
+        }
         for(MultipartFile file : files){
             String contentType = file.getContentType();
             boolean isZipFile = contentType != null && (

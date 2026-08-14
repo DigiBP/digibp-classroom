@@ -9,6 +9,7 @@ import ch.fhnw.digibp.classroom.service.TenantService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cibseven.bpm.engine.ProcessEngine;
 import org.cibseven.bpm.engine.impl.calendar.DateTimeUtil;
+import org.cibseven.bpm.engine.impl.identity.Authentication;
 import org.cibseven.bpm.engine.repository.Deployment;
 import org.cibseven.bpm.engine.repository.DeploymentBuilder;
 import org.cibseven.bpm.engine.repository.DeploymentQuery;
@@ -36,6 +37,7 @@ import java.util.Set;
 
 public class DeploymentRestServiceImpl extends AbstractRestProcessEngineAware implements DeploymentRestService {
 
+    private static final String ADMIN_GROUP = "camunda-admin";
     public final static String DEPLOYMENT_NAME = "deployment-name";
     public final static String DEPLOYMENT_ACTIVATION_TIME = "deployment-activation-time";
     public final static String ENABLE_DUPLICATE_FILTERING = "enable-duplicate-filtering";
@@ -142,19 +144,27 @@ public class DeploymentRestServiceImpl extends AbstractRestProcessEngineAware im
         }
 
         FormPart deploymentTenantId = payload.getNamedPart(TENANT_ID);
+        boolean adminAuthentication = isAdminAuthentication();
         if (deploymentTenantId == null || deploymentTenantId.getTextContent().isBlank()) {
-            throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "No tenant id provided in the deployment.");
+            if (!adminAuthentication) {
+                throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "No tenant id provided in the deployment.");
+            }
+        } else {
+            String tenantId = deploymentTenantId.getTextContent();
+            TenantService tenantService = ApplicationContextHolder.getBean(TenantService.class);
+            if (!adminAuthentication && !tenantService.tenantExists(tenantId)) {
+                throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "Tenant id provided does not exist.");
+            }
+            deploymentBuilder.tenantId(tenantId);
         }
-
-        String tenantId = deploymentTenantId.getTextContent();
-        TenantService tenantService = ApplicationContextHolder.getBean(TenantService.class);
-        if (!tenantService.tenantExists(tenantId)) {
-            throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "Tenant id provided does not exist.");
-        }
-        deploymentBuilder.tenantId(tenantId);
 
         extractDuplicateFilteringForDeployment(payload, deploymentBuilder);
         return deploymentBuilder;
+    }
+
+    private boolean isAdminAuthentication() {
+        Authentication authentication = getProcessEngine().getIdentityService().getCurrentAuthentication();
+        return authentication != null && authentication.getGroupIds().contains(ADMIN_GROUP);
     }
 
     private void extractDuplicateFilteringForDeployment(MultipartFormData payload, DeploymentBuilder deploymentBuilder) {

@@ -243,9 +243,6 @@ public class ClassroomAPI {
         if(deploymentName == null) {
             deploymentName = files.get(0).getOriginalFilename();
         }
-        if (tenantId.isBlank() || !tenantService.tenantExists(tenantId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
-        }
         return new ResponseEntity<>(deploymentService.createTenantDeployment(tenantId, deploymentName, "ClassroomAPI by " + getCurrentUser(), files), HttpStatus.ACCEPTED);
     }
 

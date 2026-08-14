@@ -53,12 +53,17 @@ public class ModelerDeploymentSynchronizer {
     @Transactional
     public void synchronize(String tenantId) {
         if (tenantId == null) {
+            synchronizeDeployments(null, repositoryService.createDeploymentQuery().withoutTenantId().list());
             identityTenantIds().forEach(this::synchronize);
             return;
         }
 
-        List<Deployment> deployments = repositoryService.createDeploymentQuery()
-                .tenantIdIn(tenantId).list().stream()
+        synchronizeDeployments(tenantId,
+                repositoryService.createDeploymentQuery().tenantIdIn(tenantId).list());
+    }
+
+    private void synchronizeDeployments(String tenantId, List<Deployment> deployments) {
+        deployments = deployments.stream()
                 .sorted(Comparator.comparing(Deployment::getDeploymentTime))
                 .toList();
 

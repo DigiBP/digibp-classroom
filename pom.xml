@@ -125,6 +125,18 @@
             <version>22.2.0</version>
         </dependency>
 
+        <!-- Groovy JSR-223 scripting support for BPMN script tasks -->
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+            <version>5.0.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-jsr223</artifactId>
+            <version>5.0.4</version>
+        </dependency>
+
         <!-- Database (MySQL, H2 or postgresql) drivers -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

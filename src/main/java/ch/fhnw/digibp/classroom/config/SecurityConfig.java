@@ -6,6 +6,11 @@
 package ch.fhnw.digibp.classroom.config;
 
 import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.cibseven.bpm.engine.IdentityService;
 import org.cibseven.bpm.engine.ProcessEngine;
 import org.cibseven.bpm.engine.rest.security.auth.ProcessEngineAuthenticationFilter;
@@ -15,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
+import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -56,6 +62,17 @@ public class SecurityConfig {
     public Filter getProcessEngineAuthenticationFilter() {
         return new ProcessEngineAuthenticationFilter() {
             @Override
+            public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+                                 FilterChain filterChain) throws IOException, ServletException {
+                HttpServletRequest request = (HttpServletRequest) servletRequest;
+                if (allowsAnonymousAccess(request) && request.getHeader("Authorization") == null) {
+                    filterChain.doFilter(servletRequest, servletResponse);
+                    return;
+                }
+                super.doFilter(servletRequest, servletResponse, filterChain);
+            }
+
+            @Override
             protected List<String> getTenantsOfUser(ProcessEngine engine, String userId) {
                 // Role groups are shared across all classroom tenants. Resolving tenant
                 // access through groups would therefore expose every tenant to a user.
@@ -66,5 +83,25 @@ public class SecurityConfig {
                         .toList();
             }
         };
+    }
+
+    private boolean allowsAnonymousAccess(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length())
+                .replaceFirst("^/engine-rest", "")
+                .replaceFirst("^/engine/[^/]+", "");
+
+        if ("OPTIONS".equals(request.getMethod())) {
+            return true;
+        }
+        if (path.equals("/external-task") || path.startsWith("/external-task/")) {
+            return true;
+        }
+        if (!"POST".equals(request.getMethod())) {
+            return false;
+        }
+        return path.equals("/message")
+                || path.equals("/signal")
+                || path.matches("^/process-definition/.+/(start|submit-form)$")
+                || path.matches("^/decision-definition/.+/evaluate$");
     }
 }

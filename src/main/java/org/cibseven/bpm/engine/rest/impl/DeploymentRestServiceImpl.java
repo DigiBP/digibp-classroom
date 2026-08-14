@@ -147,13 +147,17 @@ public class DeploymentRestServiceImpl extends AbstractRestProcessEngineAware im
         boolean adminAuthentication = isAdminAuthentication();
         if (deploymentTenantId == null || deploymentTenantId.getTextContent().isBlank()) {
             if (!adminAuthentication) {
-                throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "No tenant id provided in the deployment.");
+                deploymentBuilder.tenantId(getSingleAuthenticatedTenantId());
             }
         } else {
             String tenantId = deploymentTenantId.getTextContent();
             TenantService tenantService = ApplicationContextHolder.getBean(TenantService.class);
             if (!adminAuthentication && !tenantService.tenantExists(tenantId)) {
                 throw new InvalidRequestException(Status.NOT_ACCEPTABLE, "Tenant id provided does not exist.");
+            }
+            if (!adminAuthentication && !isAuthenticatedTenant(tenantId)) {
+                throw new InvalidRequestException(Status.FORBIDDEN,
+                        "The authenticated user is not a member of the tenant provided in the deployment.");
             }
             deploymentBuilder.tenantId(tenantId);
         }
@@ -165,6 +169,22 @@ public class DeploymentRestServiceImpl extends AbstractRestProcessEngineAware im
     private boolean isAdminAuthentication() {
         Authentication authentication = getProcessEngine().getIdentityService().getCurrentAuthentication();
         return authentication != null && authentication.getGroupIds().contains(ADMIN_GROUP);
+    }
+
+    private String getSingleAuthenticatedTenantId() {
+        Authentication authentication = getProcessEngine().getIdentityService().getCurrentAuthentication();
+        List<String> tenantIds = authentication == null ? null : authentication.getTenantIds();
+        if (tenantIds == null || tenantIds.size() != 1) {
+            throw new InvalidRequestException(Status.NOT_ACCEPTABLE,
+                    "No tenant id provided in the deployment and the authenticated user does not belong to exactly one tenant.");
+        }
+        return tenantIds.get(0);
+    }
+
+    private boolean isAuthenticatedTenant(String tenantId) {
+        Authentication authentication = getProcessEngine().getIdentityService().getCurrentAuthentication();
+        return authentication != null && authentication.getTenantIds() != null
+                && authentication.getTenantIds().contains(tenantId);
     }
 
     private void extractDuplicateFilteringForDeployment(MultipartFormData payload, DeploymentBuilder deploymentBuilder) {

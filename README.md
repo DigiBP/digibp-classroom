@@ -55,6 +55,87 @@ docker run --rm -p 8080:8080 \
   digibp-classroom
 ```
 
+### Docker Compose
+
+The released image can be run together with PostgreSQL using Docker Compose. Save the following as `compose.yaml`:
+
+```yaml
+services:
+  classroom:
+    image: ghcr.io/digibp/digibp-classroom:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/classroom
+      SPRING_DATASOURCE_USERNAME: classroom
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      CIBSEVEN_ADMIN_PASSWORD: ${CIBSEVEN_ADMIN_PASSWORD:?CIBSEVEN_ADMIN_PASSWORD must be set}
+      CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET: ${CIBSEVEN_JWT_SECRET:?CIBSEVEN_JWT_SECRET must be set}
+      CIBSEVEN_ENGINE_REST_URL: ${PUBLIC_URL:-http://localhost:8080}
+      CORS_ENABLED: ${CORS_ENABLED:-false}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: classroom
+      POSTGRES_USER: classroom
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U classroom -d classroom"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+```
+
+Create a `.env` file next to `compose.yaml`. Do not commit this file:
+
+```dotenv
+IMAGE_TAG=v1.0.0
+POSTGRES_PASSWORD=replace-with-a-strong-database-password
+CIBSEVEN_ADMIN_PASSWORD=replace-with-a-strong-admin-password
+CIBSEVEN_JWT_SECRET=replace-with-a-long-random-base64-secret
+PUBLIC_URL=http://localhost:8080
+```
+
+Generate the JWT secret, then start the services:
+
+```shell
+openssl rand -base64 64
+docker compose up -d
+```
+
+For a public deployment, set `PUBLIC_URL` to the externally reachable HTTPS URL. If the GHCR package is private, authenticate first with `docker login ghcr.io`.
+
+## Creating a release
+
+Releases are built automatically by the GitHub Actions workflow when a new tag whose name starts with `v` is created. Use a semantic version tag such as `v1.2.0`.
+
+1. Open the repository on GitHub and select **Releases** on the repository page.
+2. Select **Draft a new release**.
+3. Select **Choose a tag**, enter the new version such as `v1.2.0`, and select **Create new tag**.
+4. Set the target branch or commit that should be released, normally `master`.
+5. Enter a release title such as `v1.2.0`. Release notes may be entered manually or created with **Generate release notes**.
+6. Select **Publish release**. Creating the `v1.2.0` tag starts the `Release` GitHub Actions workflow.
+7. Open the repository's **Actions** tab and follow the workflow run. It builds and tests the application and publishes these images to the GitHub Container Registry:
+
+   ```text
+   ghcr.io/digibp/digibp-classroom:v1.2.0
+   ghcr.io/digibp/digibp-classroom:latest
+   ```
+
+The workflow also updates the GitHub Release with generated release notes. Use a new version number for each release. Consumers should pin the versioned image tag instead of `latest` when reproducible deployments are required.
+
 ## Roles
 
 | Process Role | Group | User | Tasklist | Cockpit | Admin | Modeler | Dashboard | Reports | Name |

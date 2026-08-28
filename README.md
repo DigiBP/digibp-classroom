@@ -41,18 +41,20 @@ java -jar target/digibp-classroom.jar --spring.profiles.active=prod
 
 ### Docker
 
-The published image runs with Java 17 as a non-root user. Without datasource variables, it stores its data in an H2 file database under `/app/data`. Mount a volume to persist the database:
+The published image runs with Java 17 as a non-root user. Without datasource variables, it stores its data in an H2 file database under `/app/data`. Mount a volume to persist the database.
+
+On Apple Silicon Macs, use `--platform linux/amd64` unless a multi-architecture image is available:
 
 ```shell
-docker run --name digibp-classroom -p 8080:8080 \
+docker run --platform linux/amd64 --name digibp-classroom -p 8080:8080 \
   -v digibp-classroom-data:/app/data \
   -e CIBSEVEN_ADMIN_PASSWORD=secret \
-  -e CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET="$(openssl rand -base64 64)" \
+  -e CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET="$(openssl rand -base64 128 | tr -d '\n')" \
   -e CIBSEVEN_ENGINE_REST_URL=http://localhost:8080 \
   ghcr.io/digibp/digibp-classroom:latest
 ```
 
-Replace the example admin password before running the container. If the GHCR package is private, authenticate first with `docker login ghcr.io`.
+Replace the example admin password before running the container. The JWT secret must be a Base64-decodable string of at least 155 characters. The command above generates a suitable temporary secret automatically.
 
 ### Docker Compose
 
@@ -84,19 +86,23 @@ SPRING_DATASOURCE_URL=jdbc:postgresql://db.example.org:5432/classroom
 SPRING_DATASOURCE_USERNAME=classroom
 SPRING_DATASOURCE_PASSWORD=replace-with-the-database-password
 CIBSEVEN_ADMIN_PASSWORD=replace-with-a-strong-admin-password
-CIBSEVEN_JWT_SECRET=replace-with-a-long-random-base64-secret
+CIBSEVEN_JWT_SECRET=replace-with-a-base64-secret-of-at-least-155-characters
 PUBLIC_URL=https://classroom.example.org
 ```
 
-Generate the JWT secret, then start the services:
+Generate a suitable JWT secret with:
 
 ```shell
-openssl rand -base64 64
+openssl rand -base64 128 | tr -d '\n'
+```
+
+Copy the generated value into `CIBSEVEN_JWT_SECRET` in `.env`, then start the service:
+
+```shell
 docker compose up -d
 ```
 
 The remote PostgreSQL server must accept connections from the Docker host, and the database must already exist. Set `PUBLIC_URL` to the externally reachable HTTPS URL.
-
 ## Creating a release
 
 Releases are built automatically by the GitHub Actions workflow when a new tag whose name starts with `v` is created. Use a semantic version tag such as `v1.2.0`.

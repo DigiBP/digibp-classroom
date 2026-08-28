@@ -15,15 +15,15 @@ mvn clean package
 java -jar target/digibp-classroom.jar
 ```
 
-Local settings belong in `src/main/resources/application-local.yaml`. The `prod` profile reads its database and runtime configuration from environment variables.
+Local settings belong in `src/main/resources/application-local.yaml`. The `prod` profile uses a file-based H2 database by default. Its database and runtime configuration can be overridden with environment variables.
 
 ### Production configuration
 
 | Environment variable | Required | Description |
 |---|---:|---|
-| `SPRING_DATASOURCE_URL` | yes | JDBC URL, for example `jdbc:postgresql://localhost:5432/classroom` |
-| `SPRING_DATASOURCE_USERNAME` | yes | Database user |
-| `SPRING_DATASOURCE_PASSWORD` | yes | Database password |
+| `SPRING_DATASOURCE_URL` | no | JDBC URL; defaults to `jdbc:h2:file:./data/cibseven` |
+| `SPRING_DATASOURCE_USERNAME` | no | Database user; defaults to `sa` |
+| `SPRING_DATASOURCE_PASSWORD` | no | Database password; empty by default |
 | `CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET` | yes | Base64-decodable JWT secret shared by the webclient and REST API |
 | `CIBSEVEN_ENGINE_REST_URL` | yes in production | Public application URL without `/engine-rest`, for example `https://example.org` |
 | `CIBSEVEN_ADMIN_PASSWORD` | yes in production | Password of the initial `demo` administrator |
@@ -41,23 +41,22 @@ java -jar target/digibp-classroom.jar --spring.profiles.active=prod
 
 ### Docker
 
-The Docker image builds the application with Java 17 and runs it as a non-root user:
+The published image runs with Java 17 as a non-root user. Without datasource variables, it stores its data in an H2 file database under `/app/data`. Mount a volume to persist the database:
 
 ```shell
-docker build -t digibp-classroom .
-docker run --rm -p 8080:8080 \
-  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/classroom \
-  -e SPRING_DATASOURCE_USERNAME=classroom \
-  -e SPRING_DATASOURCE_PASSWORD=secret \
+docker run --name digibp-classroom -p 8080:8080 \
+  -v digibp-classroom-data:/app/data \
   -e CIBSEVEN_ADMIN_PASSWORD=secret \
   -e CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET="$(openssl rand -base64 64)" \
   -e CIBSEVEN_ENGINE_REST_URL=http://localhost:8080 \
-  digibp-classroom
+  ghcr.io/digibp/digibp-classroom:latest
 ```
+
+Replace the example admin password before running the container. If the GHCR package is private, authenticate first with `docker login ghcr.io`.
 
 ### Docker Compose
 
-The released image can be run together with PostgreSQL using Docker Compose. Save the following as `compose.yaml`:
+The released image can connect to an existing remote PostgreSQL database using Docker Compose. Save the following as `compose.yaml`:
 
 ```yaml
 services:
@@ -67,45 +66,26 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/classroom
-      SPRING_DATASOURCE_USERNAME: classroom
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?SPRING_DATASOURCE_URL must be set}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:?SPRING_DATASOURCE_USERNAME must be set}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:?SPRING_DATASOURCE_PASSWORD must be set}
       CIBSEVEN_ADMIN_PASSWORD: ${CIBSEVEN_ADMIN_PASSWORD:?CIBSEVEN_ADMIN_PASSWORD must be set}
       CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET: ${CIBSEVEN_JWT_SECRET:?CIBSEVEN_JWT_SECRET must be set}
       CIBSEVEN_ENGINE_REST_URL: ${PUBLIC_URL:-http://localhost:8080}
       CORS_ENABLED: ${CORS_ENABLED:-false}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  postgres:
-    image: postgres:17-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: classroom
-      POSTGRES_USER: classroom
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U classroom -d classroom"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres-data:
 ```
 
 Create a `.env` file next to `compose.yaml`. Do not commit this file:
 
 ```dotenv
 IMAGE_TAG=v1.0.0
-POSTGRES_PASSWORD=replace-with-a-strong-database-password
+SPRING_DATASOURCE_URL=jdbc:postgresql://db.example.org:5432/classroom
+SPRING_DATASOURCE_USERNAME=classroom
+SPRING_DATASOURCE_PASSWORD=replace-with-the-database-password
 CIBSEVEN_ADMIN_PASSWORD=replace-with-a-strong-admin-password
 CIBSEVEN_JWT_SECRET=replace-with-a-long-random-base64-secret
-PUBLIC_URL=http://localhost:8080
+PUBLIC_URL=https://classroom.example.org
 ```
 
 Generate the JWT secret, then start the services:
@@ -115,7 +95,7 @@ openssl rand -base64 64
 docker compose up -d
 ```
 
-For a public deployment, set `PUBLIC_URL` to the externally reachable HTTPS URL. If the GHCR package is private, authenticate first with `docker login ghcr.io`.
+The remote PostgreSQL server must accept connections from the Docker host, and the database must already exist. Set `PUBLIC_URL` to the externally reachable HTTPS URL.
 
 ## Creating a release
 

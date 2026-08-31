@@ -42,6 +42,8 @@ springdoc:
 
 cibseven:
   webclient:
+    user:
+      userPasswordChangeEnabled: true
     authentication:
       jwtSecret: ${CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET:}
     engine-rest:

@@ -50,9 +50,6 @@ public class TenantAwareFilterResource extends FilterResourceImpl {
         }
 
         String tenantId = TenantTaskFilterService.tenantId(filter);
-        if (tenantId == null && !TenantFilterAccess.isAdmin(getProcessEngine())) {
-            tenantId = TenantFilterAccess.requiredTenantId(getProcessEngine());
-        }
         String owner = filter.getOwner();
         try {
             filterDto.updateFilter(filter, getProcessEngine());
@@ -63,9 +60,7 @@ public class TenantAwareFilterResource extends FilterResourceImpl {
 
         Map<String, Object> properties = filter.getProperties() == null
                 ? new HashMap<>() : new HashMap<>(filter.getProperties());
-        if (tenantId != null) {
-            properties.put(TenantTaskFilterService.TENANT_PROPERTY, tenantId);
-        }
+        properties.put(TenantTaskFilterService.TENANT_PROPERTY, tenantId);
         properties.remove(TenantTaskFilterService.STANDARD_PROPERTY);
         filter.setProperties(properties);
         filter.setOwner(owner);

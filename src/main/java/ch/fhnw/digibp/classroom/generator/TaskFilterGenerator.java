@@ -24,8 +24,8 @@ public class TaskFilterGenerator {
 
     @PostConstruct
     public void init(){
-        LOGGER.info("Synchronizing tenant task filters");
-        tenantTaskFilterService.synchronizeAllTenants();
+        LOGGER.info("Synchronizing global system task filters");
+        tenantTaskFilterService.synchronizeSystemFilters();
     }
 
 }

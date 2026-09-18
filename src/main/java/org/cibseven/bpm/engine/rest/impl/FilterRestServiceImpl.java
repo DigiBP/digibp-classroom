@@ -97,15 +97,13 @@ public class FilterRestServiceImpl extends AbstractAuthorizedRestResource implem
                     "Unable to create filter with invalid content");
         }
 
-        if (!TenantFilterAccess.isAdmin(engine)) {
-            Map<String, Object> properties = filter.getProperties() == null
-                    ? new HashMap<>() : new HashMap<>(filter.getProperties());
-            properties.put(TenantTaskFilterService.TENANT_PROPERTY,
-                    TenantFilterAccess.requiredTenantId(engine));
-            properties.remove(TenantTaskFilterService.STANDARD_PROPERTY);
-            filter.setProperties(properties);
-            filter.setOwner(TenantFilterAccess.currentUserId(engine));
-        }
+        Map<String, Object> properties = filter.getProperties() == null
+                ? new HashMap<>() : new HashMap<>(filter.getProperties());
+        properties.put(TenantTaskFilterService.TENANT_PROPERTY,
+                TenantFilterAccess.requiredTenantId(engine));
+        properties.remove(TenantTaskFilterService.STANDARD_PROPERTY);
+        filter.setProperties(properties);
+        filter.setOwner(TenantFilterAccess.currentUserId(engine));
         engine.getFilterService().saveFilter(filter);
         return FilterDto.fromFilter(filter);
     }

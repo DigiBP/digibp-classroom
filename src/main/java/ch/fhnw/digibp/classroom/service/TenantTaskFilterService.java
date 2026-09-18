@@ -12,20 +12,23 @@ import org.cibseven.bpm.engine.TaskService;
 import org.cibseven.bpm.engine.authorization.Authorization;
 import org.cibseven.bpm.engine.filter.Filter;
 import org.cibseven.bpm.engine.identity.Tenant;
-import org.cibseven.bpm.engine.identity.User;
 import org.cibseven.bpm.engine.task.TaskQuery;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import static org.cibseven.bpm.engine.authorization.Permissions.READ;
 import static org.cibseven.bpm.engine.authorization.Resources.FILTER;
 
 @Service
 public class TenantTaskFilterService {
+
+    private static final Logger LOGGER = Logger.getLogger(TenantTaskFilterService.class.getName());
 
     public static final String TENANT_PROPERTY = "digibpTenantId";
     public static final String STANDARD_PROPERTY = "digibpStandardFilter";
@@ -50,40 +53,38 @@ public class TenantTaskFilterService {
         this.authorizationService = authorizationService;
     }
 
+    public void synchronizeSystemFilters() {
+        Set<String> systemFilterIds = new HashSet<>();
+        systemFilterIds.add(ensureSystemFilter(ALL_TASKS, "All tasks", 0,
+                taskService.createTaskQuery()).getId());
+        systemFilterIds.add(ensureSystemFilter(MY_TASKS, "Tasks assigned to me", 1,
+                taskService.createTaskQuery().taskAssigneeExpression("${currentUser()}")).getId());
+        systemFilterIds.add(ensureSystemFilter(ROLE_GROUP_TASKS, "Tasks assigned to my groups", 2,
+                taskService.createTaskQuery()
+                        .taskCandidateGroupInExpression("${currentUserGroups()}")).getId());
+        removeObsoleteSystemFilterCopies(systemFilterIds);
+        assignTenantToLegacyFilters();
+    }
+
+    /**
+     * Kept for callers compiled against the former tenant-specific implementation.
+     */
     public void synchronizeAllTenants() {
-        removeLegacyGlobalStandardFilters();
-        for (Tenant tenant : identityService.createTenantQuery().list()) {
-            ensureTenantFilters(tenant.getId());
-            for (User user : identityService.createUserQuery().memberOfTenant(tenant.getId()).list()) {
-                grantStandardFiltersToUser(tenant.getId(), user.getId());
-            }
-        }
+        synchronizeSystemFilters();
     }
 
+    /**
+     * Standard filters are global now; the tenant argument is intentionally ignored.
+     */
     public void ensureTenantFilters(String tenantId) {
-        ensureFilter(tenantId, ALL_TASKS, "All tasks", 0,
-                taskService.createTaskQuery().tenantIdIn(tenantId));
-        ensureFilter(tenantId, MY_TASKS, "Tasks assigned to me", 1,
-                taskService.createTaskQuery().tenantIdIn(tenantId)
-                        .taskAssigneeExpression("${currentUser()}"));
-        ensureFilter(tenantId, ROLE_GROUP_TASKS, "Tasks assigned to my groups", 2,
-                taskService.createTaskQuery().tenantIdIn(tenantId)
-                        .taskCandidateGroupInExpression("${currentUserGroups()}"));
+        synchronizeSystemFilters();
     }
 
+    /**
+     * Global READ authorizations replaced per-user grants.
+     */
     public void grantStandardFiltersToUser(String tenantId, String userId) {
-        for (Filter filter : tenantFilters(tenantId)) {
-            Authorization authorization = authorizationService.createAuthorizationQuery()
-                    .userIdIn(userId).resourceType(FILTER).resourceId(filter.getId()).singleResult();
-            if (authorization == null) {
-                authorization = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_GRANT);
-                authorization.setUserId(userId);
-                authorization.setResource(FILTER);
-                authorization.setResourceId(filter.getId());
-            }
-            authorization.addPermission(READ);
-            authorizationService.saveAuthorization(authorization);
-        }
+        synchronizeSystemFilters();
     }
 
     public void deleteTenantFilters(String tenantId) {
@@ -105,39 +106,96 @@ public class TenantTaskFilterService {
     }
 
     public static boolean isStandard(Filter filter) {
+        return tenantId(filter) == null && hasStandardMarker(filter);
+    }
+
+    private Filter ensureSystemFilter(String name, String description, int priority, TaskQuery query) {
+        Filter filter = filterService.createFilterQuery().list().stream()
+                .filter(candidate -> canonicalSystemName(candidate).equals(name))
+                .sorted((left, right) -> Boolean.compare(isStandard(right), isStandard(left)))
+                .findFirst().orElse(null);
+        if (filter == null) {
+            filter = filterService.newTaskFilter();
+        }
+
+        Map<String, Object> properties = filter.getProperties() == null
+                ? new HashMap<>() : new HashMap<>(filter.getProperties());
+        properties.put("description", description);
+        properties.put("priority", priority);
+        properties.put("refresh", true);
+        properties.remove(TENANT_PROPERTY);
+        properties.put(STANDARD_PROPERTY, true);
+        filter.setName(name)
+                .setOwner(null)
+                .setProperties(properties)
+                .setQuery(query);
+        filterService.saveFilter(filter);
+        ensureGlobalReadAuthorization(filter);
+        return filter;
+    }
+
+    private void ensureGlobalReadAuthorization(Filter filter) {
+        Authorization authorization = authorizationService.createAuthorizationQuery()
+                .resourceType(FILTER).resourceId(filter.getId()).list().stream()
+                .filter(item -> item.getAuthorizationType() == Authorization.AUTH_TYPE_GLOBAL)
+                .findFirst().orElse(null);
+        if (authorization == null) {
+            authorization = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_GLOBAL);
+            authorization.setResource(FILTER);
+            authorization.setResourceId(filter.getId());
+        }
+        authorization.addPermission(READ);
+        authorizationService.saveAuthorization(authorization);
+    }
+
+    private void removeObsoleteSystemFilterCopies(Set<String> systemFilterIds) {
+        for (Filter filter : filterService.createFilterQuery().list()) {
+            if (!systemFilterIds.contains(filter.getId()) && isSystemFilterCandidate(filter)) {
+                filterService.deleteFilter(filter.getId());
+            }
+        }
+    }
+
+    private void assignTenantToLegacyFilters() {
+        for (Filter filter : filterService.createFilterQuery().list()) {
+            if (isStandard(filter) || tenantId(filter) != null || filter.getOwner() == null) {
+                continue;
+            }
+            List<Tenant> ownerTenants = identityService.createTenantQuery()
+                    .userMember(filter.getOwner()).list();
+            if (ownerTenants.size() != 1) {
+                LOGGER.warning(() -> "Legacy task filter '" + filter.getId()
+                        + "' cannot be assigned unambiguously to a tenant and remains inaccessible");
+                continue;
+            }
+
+            Map<String, Object> properties = filter.getProperties() == null
+                    ? new HashMap<>() : new HashMap<>(filter.getProperties());
+            properties.put(TENANT_PROPERTY, ownerTenants.get(0).getId());
+            properties.remove(STANDARD_PROPERTY);
+            filter.setProperties(properties);
+            filterService.saveFilter(filter);
+        }
+    }
+
+    private boolean isSystemFilterCandidate(Filter filter) {
+        return !canonicalSystemName(filter).isEmpty();
+    }
+
+    private static boolean hasStandardMarker(Filter filter) {
         return filter.getProperties() != null
                 && Boolean.TRUE.equals(filter.getProperties().get(STANDARD_PROPERTY));
     }
 
-    private void ensureFilter(String tenantId, String name, String description, int priority,
-                              TaskQuery query) {
-        Filter existing = tenantFilters(tenantId).stream()
-                .filter(TenantTaskFilterService::isStandard)
-                .filter(filter -> name.equals(filter.getName()))
-                .findFirst().orElse(null);
-        if (existing != null) {
-            return;
+    private static String canonicalSystemName(Filter filter) {
+        if (filter.getName() == null) {
+            return "";
         }
-
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("description", description);
-        properties.put("priority", priority);
-        properties.put("refresh", true);
-        properties.put(TENANT_PROPERTY, tenantId);
-        properties.put(STANDARD_PROPERTY, true);
-        Filter filter = filterService.newTaskFilter()
-                .setName(name)
-                .setProperties(properties)
-                .setQuery(query);
-        filterService.saveFilter(filter);
-    }
-
-    private void removeLegacyGlobalStandardFilters() {
-        for (Filter filter : filterService.createFilterQuery().list()) {
-            if (tenantId(filter) == null && filter.getOwner() == null
-                    && LEGACY_STANDARD_NAMES.contains(filter.getName())) {
-                filterService.deleteFilter(filter.getId());
-            }
+        if (!hasStandardMarker(filter)
+                && (tenantId(filter) != null || filter.getOwner() != null
+                || !LEGACY_STANDARD_NAMES.contains(filter.getName()))) {
+            return "";
         }
+        return "Role/Groupe Tasks".equals(filter.getName()) ? ROLE_GROUP_TASKS : filter.getName();
     }
 }

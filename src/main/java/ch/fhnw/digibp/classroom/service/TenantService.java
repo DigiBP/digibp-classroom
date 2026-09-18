@@ -34,7 +34,6 @@ public class TenantService {
         Tenant tenant = identityService.newTenant(tenantId);
         tenant.setName(name);
         identityService.saveTenant(tenant);
-        tenantTaskFilterService.ensureTenantFilters(tenantId);
 
         return tenant.getId();
     }

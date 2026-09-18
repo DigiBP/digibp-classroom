@@ -16,27 +16,21 @@ import java.util.List;
 
 public final class TenantFilterAccess {
 
-    private static final String ADMIN_GROUP = "camunda-admin";
-
     private TenantFilterAccess() {
     }
 
     public static boolean mayAccess(ProcessEngine engine, Filter filter) {
         Authentication authentication = engine.getIdentityService().getCurrentAuthentication();
-        if (isAdmin(authentication)) {
-            return true;
-        }
         if (authentication == null || authentication.getUserId() == null) {
             return false;
         }
 
-        String filterTenant = TenantTaskFilterService.tenantId(filter);
-        if (filterTenant != null) {
-            return tenantIds(authentication).contains(filterTenant);
+        if (TenantTaskFilterService.isStandard(filter)) {
+            return true;
         }
 
-        // Compatibility for filters created before tenant tagging was introduced.
-        return authentication.getUserId().equals(filter.getOwner());
+        String filterTenant = TenantTaskFilterService.tenantId(filter);
+        return filterTenant != null && tenantIds(authentication).contains(filterTenant);
     }
 
     public static void assertAccess(ProcessEngine engine, Filter filter) {
@@ -63,15 +57,6 @@ public final class TenantFilterAccess {
     public static String currentUserId(ProcessEngine engine) {
         Authentication authentication = engine.getIdentityService().getCurrentAuthentication();
         return authentication == null ? null : authentication.getUserId();
-    }
-
-    public static boolean isAdmin(ProcessEngine engine) {
-        return isAdmin(engine.getIdentityService().getCurrentAuthentication());
-    }
-
-    private static boolean isAdmin(Authentication authentication) {
-        return authentication != null && authentication.getGroupIds() != null
-                && authentication.getGroupIds().contains(ADMIN_GROUP);
     }
 
     private static List<String> tenantIds(Authentication authentication) {

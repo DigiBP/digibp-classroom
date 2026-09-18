@@ -21,9 +21,6 @@ public class UserService {
     @Autowired
     private IdentityService identityService;
 
-    @Autowired
-    private TenantTaskFilterService tenantTaskFilterService;
-
     private final static Logger LOGGER = Logger.getLogger(UserService.class.getName());
 
     public String addUser(String userId, String password, String firstName, String lastName, String email) throws Exception {
@@ -53,7 +50,6 @@ public class UserService {
         }
         if(tenantId!=null){
             addUserToTenant(userId, tenantId);
-            tenantTaskFilterService.grantStandardFiltersToUser(tenantId, userId);
             if (groupIds != null) {
                 addGroupsToTenant(groupIds, tenantId);
             }

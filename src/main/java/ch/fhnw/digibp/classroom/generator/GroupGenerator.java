@@ -6,7 +6,6 @@
 package ch.fhnw.digibp.classroom.generator;
 
 import ch.fhnw.digibp.classroom.service.GroupService;
-import ch.fhnw.digibp.classroom.service.TaskFilterAuthService;
 import org.cibseven.bpm.engine.IdentityService;
 import org.cibseven.bpm.engine.authorization.Permission;
 import org.cibseven.bpm.engine.authorization.Permissions;
@@ -28,9 +27,6 @@ public class GroupGenerator {
 
     @Autowired
     private GroupService groupService;
-
-    @Autowired
-    private TaskFilterAuthService taskFilterAuthService;
 
     private final static Logger LOGGER = Logger.getLogger(GroupGenerator.class.getName());
 
@@ -83,6 +79,7 @@ public class GroupGenerator {
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.BATCH, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.DEPLOYMENT, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.FILTER, new String[]{"*"});
+        groupService.createGrantGroupAuthorization(new String[]{"manager", "initiator", "worker"}, new Permission[]{Permissions.CREATE}, Resources.FILTER, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.HISTORIC_PROCESS_INSTANCE, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.HISTORIC_TASK, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.REPORT, new String[]{"*"});
@@ -94,7 +91,6 @@ public class GroupGenerator {
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.TENANT, new String[]{"*"});
         groupService.createGrantGroupAuthorization(new String[]{"engineer"}, new Permission[]{Permissions.ALL}, Resources.TENANT_MEMBERSHIP, new String[]{"*"});
 
-        taskFilterAuthService.createDenyGroupAuthorization(new String[]{"initiator", "worker"}, new Permission[]{Permissions.ALL},"All Tasks");
     }
 
 }

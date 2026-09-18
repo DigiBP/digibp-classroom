@@ -17,6 +17,9 @@ public class TenantService {
     @Autowired
     private IdentityService identityService;
 
+    @Autowired
+    private TenantTaskFilterService tenantTaskFilterService;
+
     private final static Logger LOGGER = Logger.getLogger(TenantService.class.getName());
 
     public String addTenant(String tenantId, String name) throws Exception {
@@ -31,6 +34,7 @@ public class TenantService {
         Tenant tenant = identityService.newTenant(tenantId);
         tenant.setName(name);
         identityService.saveTenant(tenant);
+        tenantTaskFilterService.ensureTenantFilters(tenantId);
 
         return tenant.getId();
     }
@@ -39,6 +43,7 @@ public class TenantService {
         if(identityService.createUserQuery().memberOfTenant(tenantId).count() > 0){
             throw new Exception("Tenant " + tenantId + " has assigned user(s).");
         }
+        tenantTaskFilterService.deleteTenantFilters(tenantId);
         identityService.deleteTenant(tenantId);
     }
 

@@ -81,7 +81,7 @@ public class TenantTaskFilterService {
     }
 
     /**
-     * Global READ authorizations replaced per-user grants.
+     * Shared standard filters use global READ grants, except All Tasks, which is granted to engineers.
      */
     public void grantStandardFiltersToUser(String tenantId, String userId) {
         synchronizeSystemFilters();
@@ -130,8 +130,33 @@ public class TenantTaskFilterService {
                 .setProperties(properties)
                 .setQuery(query);
         filterService.saveFilter(filter);
-        ensureGlobalReadAuthorization(filter);
+        if (ALL_TASKS.equals(name)) {
+            ensureEngineerReadAuthorization(filter);
+        } else {
+            ensureGlobalReadAuthorization(filter);
+        }
         return filter;
+    }
+
+    private void ensureEngineerReadAuthorization(Filter filter) {
+        for (Authorization authorization : authorizationService.createAuthorizationQuery()
+                .resourceType(FILTER).resourceId(filter.getId()).list()) {
+            if (authorization.getAuthorizationType() == Authorization.AUTH_TYPE_GLOBAL) {
+                authorizationService.deleteAuthorization(authorization.getId());
+            }
+        }
+        Authorization authorization = authorizationService.createAuthorizationQuery()
+                .groupIdIn("engineer").resourceType(FILTER).resourceId(filter.getId()).list().stream()
+                .filter(item -> item.getAuthorizationType() == Authorization.AUTH_TYPE_GRANT)
+                .findFirst().orElse(null);
+        if (authorization == null) {
+            authorization = authorizationService.createNewAuthorization(Authorization.AUTH_TYPE_GRANT);
+            authorization.setGroupId("engineer");
+            authorization.setResource(FILTER);
+            authorization.setResourceId(filter.getId());
+        }
+        authorization.addPermission(READ);
+        authorizationService.saveAuthorization(authorization);
     }
 
     private void ensureGlobalReadAuthorization(Filter filter) {

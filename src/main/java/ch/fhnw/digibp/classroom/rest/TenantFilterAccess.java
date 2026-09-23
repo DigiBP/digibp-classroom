@@ -13,8 +13,11 @@ import org.cibseven.bpm.engine.rest.exception.InvalidRequestException;
 
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Set;
 
 public final class TenantFilterAccess {
+    private static final Set<String> TASKLIST_GROUPS = Set.of(
+            "manager", "initiator", "worker", "engineer");
 
     private TenantFilterAccess() {
     }
@@ -25,8 +28,23 @@ public final class TenantFilterAccess {
             return false;
         }
 
-        if (TenantTaskFilterService.isStandard(filter)) {
+        if (authentication.getGroupIds() != null
+                && authentication.getGroupIds().contains("camunda-admin")) {
             return true;
+        }
+
+        if (authentication.getGroupIds() == null
+                || authentication.getGroupIds().stream().noneMatch(TASKLIST_GROUPS::contains)) {
+            return false;
+        }
+
+        if (TenantTaskFilterService.isStandard(filter)) {
+            return switch (filter.getName()) {
+                case TenantTaskFilterService.MY_TASKS, TenantTaskFilterService.ROLE_GROUP_TASKS -> true;
+                case TenantTaskFilterService.ALL_TASKS -> authentication.getGroupIds().contains("engineer")
+                        && tenantIds(authentication).size() == 1;
+                default -> false;
+            };
         }
 
         String filterTenant = TenantTaskFilterService.tenantId(filter);

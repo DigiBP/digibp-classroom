@@ -365,5 +365,216 @@
             }
          }
       ]
+   },
+   {
+      "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+      "name": "JSON HTTP Request + JSONPath Extraction",
+      "id": "onl.mrtn.camunda.http.json_api_call",
+      "description": "Send an HTTP request with an optional JSON body and optional Bearer authentication. Store the HTTP status and complete response body, and optionally extract a value, object, or array using JSONPath. Includes a zero-shot decision model sentiment example.",
+      "version": 2,
+      "entriesVisible": false,
+      "appliesTo": [
+         "bpmn:ServiceTask"
+      ],
+      "groups": [
+         {
+            "id": "endpoint",
+            "label": "Endpoint"
+         },
+         {
+            "id": "request",
+            "label": "Request"
+         },
+         {
+            "id": "response",
+            "label": "Response"
+         }
+      ],
+      "properties": [
+         {
+            "label": "Authentication",
+            "description": "Choose None or Bearer token. When choosing None, also clear the API key field.",
+            "type": "Dropdown",
+            "value": "bearer",
+            "choices": [
+               {
+                  "name": "None",
+                  "value": "none"
+               },
+               {
+                  "name": "Bearer token",
+                  "value": "bearer"
+               }
+            ],
+            "binding": {
+               "type": "camunda:inputParameter",
+               "name": "jsonApiAuthType"
+            }
+         },
+         {
+            "label": "API key",
+            "description": "Expression providing the API key without the Bearer prefix. Example: ${environment.getProperty('OPENAI_API_KEY')}. Do not enter the secret directly. Clear this field when authentication is None.",
+            "type": "String",
+            "value": "${environment.getProperty('OPENAI_API_KEY')}",
+            "binding": {
+               "type": "camunda:inputParameter",
+               "name": "jsonApiAuthKey"
+            }
+         },
+         {
+            "label": "Response JSONPath",
+            "description": "Select one value, object or array from the response. Use $ for the complete JSON response. Leave empty to disable extraction.",
+            "group": "response",
+            "type": "String",
+            "value": "$.answers.is_positive.noul",
+            "binding": {
+               "type": "camunda:inputParameter",
+               "name": "jsonApiResponsePath"
+            }
+         },
+         {
+            "label": "Result Format",
+            "description": "Scalar value returns a number, string, boolean or null. JSON text returns serialized JSON, including objects and arrays.",
+            "group": "response",
+            "type": "Dropdown",
+            "value": "scalar",
+            "choices": [
+               {
+                  "name": "Scalar value",
+                  "value": "scalar"
+               },
+               {
+                  "name": "JSON text",
+                  "value": "json"
+               }
+            ],
+            "binding": {
+               "type": "camunda:inputParameter",
+               "name": "jsonApiResultFormat"
+            }
+         }
+      ],
+      "scopes": [
+         {
+            "type": "camunda:Connector",
+            "properties": [
+               {
+                  "type": "Hidden",
+                  "value": "http-connector",
+                  "binding": {
+                     "type": "property",
+                     "name": "connectorId"
+                  }
+               },
+               {
+                  "label": "URL",
+                  "description": "Full API endpoint URL. Expressions may also be used.",
+                  "group": "endpoint",
+                  "type": "String",
+                  "value": "https://litellm.engines.aisl.science/v1/systemone",
+                  "constraints": {
+                     "notEmpty": true
+                  },
+                  "binding": {
+                     "type": "camunda:inputParameter",
+                     "name": "url"
+                  }
+               },
+               {
+                  "label": "HTTP Method",
+                  "group": "endpoint",
+                  "type": "Dropdown",
+                  "value": "POST",
+                  "choices": [
+                     {
+                        "name": "GET",
+                        "value": "GET"
+                     },
+                     {
+                        "name": "POST",
+                        "value": "POST"
+                     },
+                     {
+                        "name": "PUT",
+                        "value": "PUT"
+                     },
+                     {
+                        "name": "PATCH",
+                        "value": "PATCH"
+                     },
+                     {
+                        "name": "DELETE",
+                        "value": "DELETE"
+                     }
+                  ],
+                  "binding": {
+                     "type": "camunda:inputParameter",
+                     "name": "method"
+                  }
+               },
+               {
+                  "label": "Request Body",
+                  "description": "JSON text or an expression returning JSON text. Leave empty for requests without a body. The example asks whether customer feedback expresses positive sentiment.",
+                  "group": "request",
+                  "type": "Text",
+                  "value": "{\n  \"model\": \"tev1:0.8b\",\n  \"state\": \"The support team solved my problem quickly. I am very happy with the service.\",\n  \"questions\": {\n    \"is_positive\": {\n      \"type\": \"noul\",\n      \"instructions\": \"Does the customer feedback express positive sentiment?\",\n      \"criteria\": {\n        \"true\": \"The feedback expresses satisfaction, appreciation, or a positive experience.\",\n        \"false\": \"The feedback is neutral or expresses dissatisfaction, criticism, or a negative experience.\"\n      }\n    }\n  }\n}",
+                  "binding": {
+                     "type": "camunda:inputParameter",
+                     "name": "payload"
+                  }
+               },
+               {
+                  "type": "Hidden",
+                  "value": "${jsonApiAuthType == 'bearer' ? S('{}').prop('Content-Type', 'application/json').prop('Accept', 'application/json').prop('Authorization', 'Bearer '.concat(jsonApiAuthKey)).mapTo('java.util.HashMap') : S('{}').prop('Content-Type', 'application/json').prop('Accept', 'application/json').mapTo('java.util.HashMap')}",
+                  "binding": {
+                     "type": "camunda:inputParameter",
+                     "name": "headers"
+                  }
+               },
+               {
+                  "label": "HTTP Status Variable",
+                  "description": "Process variable receiving the HTTP status code.",
+                  "group": "response",
+                  "type": "String",
+                  "value": "httpStatus",
+                  "constraints": {
+                     "notEmpty": true
+                  },
+                  "binding": {
+                     "type": "camunda:outputParameter",
+                     "source": "${statusCode}"
+                  }
+               },
+               {
+                  "label": "Response Body Variable",
+                  "description": "Process variable receiving the complete response body as text.",
+                  "group": "response",
+                  "type": "String",
+                  "value": "apiResponse",
+                  "constraints": {
+                     "notEmpty": true
+                  },
+                  "binding": {
+                     "type": "camunda:outputParameter",
+                     "source": "${response}"
+                  }
+               },
+               {
+                  "label": "Extracted Value Variable",
+                  "description": "Process variable receiving the selected value or JSON text. Set to null when extraction is disabled or the HTTP status is not 2xx.",
+                  "group": "response",
+                  "type": "String",
+                  "value": "extractedValue",
+                  "constraints": {
+                     "notEmpty": true
+                  },
+                  "binding": {
+                     "type": "camunda:outputParameter",
+                     "source": "${statusCode >= 200 && statusCode < 300 && !empty jsonApiResponsePath ? (jsonApiResultFormat == 'json' ? S(response).jsonPath(jsonApiResponsePath).element().toString() : S(response).jsonPath(jsonApiResponsePath).element().value()) : null}"
+                  }
+               }
+            ]
+         }
+      ]
    }
 ]

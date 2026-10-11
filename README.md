@@ -76,6 +76,9 @@ services:
       CIBSEVEN_ENGINE_REST_URL: ${PUBLIC_URL:-http://localhost:8080}
       CORS_ENABLED: ${CORS_ENABLED:-false}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL: ${CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL:-gpt-5.4-nano}
 ```
 
 Create a `.env` file next to `compose.yaml`. Do not commit this file:
@@ -88,6 +91,9 @@ SPRING_DATASOURCE_PASSWORD=replace-with-the-database-password
 CIBSEVEN_ADMIN_PASSWORD=replace-with-a-strong-admin-password
 CIBSEVEN_JWT_SECRET=replace-with-a-base64-secret-of-at-least-155-characters
 PUBLIC_URL=https://classroom.example.org
+OPENAI_API_KEY=replace-with-your-provider-api-key
+OPENAI_BASE_URL=https://api.openai.com/v1
+CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL=gpt-5.4-nano
 ```
 
 Generate a suitable JWT secret with:
@@ -103,6 +109,15 @@ docker compose up -d
 ```
 
 The remote PostgreSQL server must accept connections from the Docker host, and the database must already exist. Set `PUBLIC_URL` to the externally reachable HTTPS URL.
+
+### AI Agent: local testing and deployment
+
+AI configuration uses OS environment variables, without an AI section in the Spring YAML files. The connector reads `OPENAI_API_KEY`, `OPENAI_BASE_URL` and `CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL` directly; leave API key, Base URL and Model empty in the BPMN task to use these defaults. Remove old `digibp.ai-agent` expressions and redeploy affected models.
+
+For local testing, supply the values through your run configuration's environment. Spring Boot does not automatically load `.env`; configure your launcher or IDE to load it if needed. The `.env` file is excluded from Git and the Docker build context.
+
+In production, inject the variables at container startup, using the Compose `environment` entries above or `docker run --env-file .env ...`; credentials are not baked into the image. Restart the app/recreate the container after changes. For a basic test, use the AI Agent template, set Agent name and Message, enable `asyncBefore`, and map `${output}` to `agentResult`.
+
 ## Creating a release
 
 Releases are built automatically by the GitHub Actions workflow when a new tag whose name starts with `v` is created. Use a semantic version tag such as `v1.2.0`.

@@ -5,6 +5,7 @@
 
 package ch.fhnw.digibp.classroom.generator;
 
+import ch.fhnw.digibp.classroom.config.ScriptAccessPlugin;
 import ch.fhnw.digibp.classroom.service.GroupService;
 import org.cibseven.bpm.engine.IdentityService;
 import org.cibseven.bpm.engine.authorization.Permission;
@@ -34,6 +35,9 @@ public class GroupGenerator {
     public void init() {
 
         groupService.createGlobalAuthorization(Permissions.READ, Resources.AUTHORIZATION, "*");
+
+        // Also provision the execution group when the classroom role groups already exist.
+        groupService.addGroup(ScriptAccessPlugin.SCRIPT_GROUP, "Script execution", ScriptAccessPlugin.GROUP_TYPE);
 
         if(identityService.createGroupQuery().groupId("owner").singleResult() != null){
             LOGGER.info("Not creating any groups.");

@@ -63,6 +63,33 @@ public class TenantAdminSecurityFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         Authentication authentication = identityService.getCurrentAuthentication();
 
+        String path = engineRestPath(request);
+        boolean administrator = authentication != null && authentication.getUserId() != null
+                && authentication.getGroupIds() != null
+                && authentication.getGroupIds().contains(ADMIN_GROUP);
+        if (!administrator && !"GET".equals(request.getMethod()) && !"OPTIONS".equals(request.getMethod())) {
+            // Match the resource also with encoded IDs, matrix parameters and trailing slashes.
+            String decodedPath = decode(path).replaceAll(";[^/]*", "").replaceAll("/+", "/")
+                    .replaceAll("/+$", "");
+            if (decodedPath.equals("/group/" + ScriptAccessPlugin.SCRIPT_GROUP)
+                    || decodedPath.startsWith("/group/" + ScriptAccessPlugin.SCRIPT_GROUP + "/")
+                    || decodedPath.matches("/tenant/[^/]+/group-members/" + ScriptAccessPlugin.SCRIPT_GROUP)) {
+                deny(response, "Only administrators may manage the script execution group");
+                return;
+            }
+            if ("POST".equals(request.getMethod()) && "/group/create".equals(decodedPath)) {
+                CreationRequest group = readCreationRequest(request, response, decodedPath);
+                if (group.id() == null) {
+                    return;
+                }
+                if (ScriptAccessPlugin.SCRIPT_GROUP.equals(group.id())) {
+                    deny(response, "Only administrators may create the script execution group");
+                    return;
+                }
+                request = group.request();
+            }
+        }
+
         if (authentication == null || authentication.getUserId() == null
                 || authentication.getGroupIds().contains(ADMIN_GROUP)
                 || !authentication.getGroupIds().contains(ENGINEER_GROUP)) {
@@ -70,7 +97,6 @@ public class TenantAdminSecurityFilter implements Filter {
             return;
         }
 
-        String path = engineRestPath(request);
         if (!isIdentityManagementPath(path)) {
             filterChain.doFilter(request, response);
             return;

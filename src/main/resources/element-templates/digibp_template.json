@@ -371,7 +371,7 @@
       "name": "JSON HTTP Request + JSONPath Extraction",
       "id": "onl.mrtn.camunda.http.json_api_call",
       "description": "Send an HTTP request with an optional JSON body and optional Bearer authentication. Store the HTTP status and complete response body, and optionally extract a value, object, or array using JSONPath. Includes a zero-shot decision model sentiment example.",
-      "version": 2,
+      "version": 3,
       "entriesVisible": false,
       "appliesTo": [
          "bpmn:ServiceTask"
@@ -393,17 +393,21 @@
       "properties": [
          {
             "label": "Authentication",
-            "description": "Choose None or Bearer token. When choosing None, also clear the API key field.",
+            "description": "Choose no authentication, a transient runtime key, or the server key. Key modes require HTTPS.",
             "type": "Dropdown",
-            "value": "bearer",
+            "value": "server-openai",
             "choices": [
                {
                   "name": "None",
                   "value": "none"
                },
                {
-                  "name": "Bearer token",
-                  "value": "bearer"
+                  "name": "Own key (transient)",
+                  "value": "transient"
+               },
+               {
+                  "name": "Server key (OPENAI_API_KEY)",
+                  "value": "server-openai"
                }
             ],
             "binding": {
@@ -412,13 +416,13 @@
             }
          },
          {
-            "label": "API key",
-            "description": "Expression providing the API key without the Bearer prefix. Example: ${environment.getProperty('OPENAI_API_KEY')}. Do not enter the secret directly. Clear this field when authentication is None.",
+            "label": "Transient key variable",
+            "description": "Used only with Own key: name of the transient String variable supplied when starting or resuming execution. Enter the key without the Bearer prefix at runtime, not here. The key does not survive wait states or async boundaries.",
             "type": "String",
-            "value": "${environment.getProperty('OPENAI_API_KEY')}",
+            "value": "requestApiKey",
             "binding": {
                "type": "camunda:inputParameter",
-               "name": "jsonApiAuthKey"
+               "name": "jsonApiAuthKeyVariable"
             }
          },
          {
@@ -468,7 +472,7 @@
                },
                {
                   "label": "URL",
-                  "description": "Full API endpoint URL. Expressions may also be used.",
+                  "description": "Full API endpoint URL. Both key modes require HTTPS. Redirects are not followed.",
                   "group": "endpoint",
                   "type": "String",
                   "value": "https://litellm.engines.aisl.science/v1/systemone",
@@ -525,7 +529,23 @@
                },
                {
                   "type": "Hidden",
-                  "value": "${jsonApiAuthType == 'bearer' ? S('{}').prop('Content-Type', 'application/json').prop('Accept', 'application/json').prop('Authorization', 'Bearer '.concat(jsonApiAuthKey)).mapTo('java.util.HashMap') : S('{}').prop('Content-Type', 'application/json').prop('Accept', 'application/json').mapTo('java.util.HashMap')}",
+                  "value": "${jsonApiAuthType}",
+                  "binding": {
+                     "type": "camunda:inputParameter",
+                     "name": "digibpAuthMode"
+                  }
+               },
+               {
+                  "type": "Hidden",
+                  "value": "${jsonApiAuthKeyVariable}",
+                  "binding": {
+                     "type": "camunda:inputParameter",
+                     "name": "digibpAuthKeyVariable"
+                  }
+               },
+               {
+                  "type": "Hidden",
+                  "value": "${S('{}').prop('Content-Type', 'application/json').prop('Accept', 'application/json').mapTo('java.util.HashMap')}",
                   "binding": {
                      "type": "camunda:inputParameter",
                      "name": "headers"

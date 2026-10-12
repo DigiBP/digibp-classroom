@@ -5,6 +5,7 @@
 
 package ch.fhnw.digibp.classroom.endpoint;
 
+import ch.fhnw.digibp.classroom.config.ScriptAccessPlugin;
 import ch.fhnw.digibp.classroom.dto.UserDTO;
 import ch.fhnw.digibp.classroom.dto.UsersDTO;
 import ch.fhnw.digibp.classroom.service.DeploymentService;
@@ -40,7 +41,7 @@ public class ClassroomAPI {
     private DeploymentService deploymentService;
 
     @GetMapping(path = "/user/showcase/generator", produces = "application/json")
-    public ResponseEntity<List<String>> getUserShowcaseGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix){
+    public ResponseEntity<List<String>> getUserShowcaseGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestParam(value = "scripting", defaultValue = "false") boolean allowScripts){
         if(!isAdminAuthentication()){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -50,6 +51,7 @@ public class ClassroomAPI {
             String tenantId = prefix + number + suffix;
             try {
                 id = tenantService.addTenant(tenantId, tenantId);
+                assignScriptGroup(tenantId, allowScripts);
                 response.add("Tenant with ID " + id + " generated.");
 
                 id = userService.addUser(tenantId+"giulia", "password", tenantId+" Giulia", "Ricci", "", new String[]{"owner"}, tenantId);
@@ -74,9 +76,26 @@ public class ClassroomAPI {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    private List<String> createUser(String tenantId, UsersDTO users) throws Exception {
+    private void assignScriptGroup(String tenantId, boolean allowScripts) {
+        if (!allowScripts) {
+            return;
+        }
+        var group = identityService.createGroupQuery().groupId(ScriptAccessPlugin.SCRIPT_GROUP).singleResult();
+        if (group == null) {
+            group = identityService.newGroup(ScriptAccessPlugin.SCRIPT_GROUP);
+            group.setName("Script execution");
+            group.setType(ScriptAccessPlugin.GROUP_TYPE);
+            identityService.saveGroup(group);
+        } else if (!ScriptAccessPlugin.GROUP_TYPE.equals(group.getType())) {
+            throw new IllegalStateException("Group '" + ScriptAccessPlugin.SCRIPT_GROUP + "' must have type SYSTEM");
+        }
+        identityService.createTenantGroupMembership(tenantId, ScriptAccessPlugin.SCRIPT_GROUP);
+    }
+
+    private List<String> createUser(String tenantId, UsersDTO users, boolean allowScripts) throws Exception {
         List<String> response = new ArrayList<>();
         String id = tenantService.addTenant(tenantId, tenantId);
+        assignScriptGroup(tenantId, allowScripts);
         response.add("Tenant with ID " + id + " generated.");
 
         for(UserDTO user : users.getUsers()){
@@ -91,13 +110,13 @@ public class ClassroomAPI {
     }
 
     @PostMapping(path = "/user", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<List<String>> postUser(@RequestParam(value = "tenant", required = false, defaultValue = "") String tenantId, @RequestBody UsersDTO users){
+    public ResponseEntity<List<String>> postUser(@RequestParam(value = "tenant", required = false, defaultValue = "") String tenantId, @RequestBody UsersDTO users, @RequestParam(value = "scripting", defaultValue = "false") boolean allowScripts){
         if(!isAdminAuthentication()){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         List<String> response = new ArrayList<>();
         try {
-            response.addAll(createUser(tenantId, users));
+            response.addAll(createUser(tenantId, users, allowScripts));
         } catch (Exception e) {
             response.add("Error: " + e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -106,7 +125,7 @@ public class ClassroomAPI {
     }
 
     @PostMapping(path = "/user/generator", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<List<String>> postUserGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestBody UsersDTO users){
+    public ResponseEntity<List<String>> postUserGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestBody UsersDTO users, @RequestParam(value = "scripting", defaultValue = "false") boolean allowScripts){
         if(!isAdminAuthentication()){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -115,6 +134,7 @@ public class ClassroomAPI {
             String tenantId = prefix + number + suffix;
             try {
                 String id = tenantService.addTenant(tenantId, tenantId);
+                assignScriptGroup(tenantId, allowScripts);
                 response.add("Tenant with ID " + id + " generated.");
 
                 for(UserDTO user : users.getUsers()){
@@ -184,7 +204,7 @@ public class ClassroomAPI {
     }
 
     @PostMapping(path = "/user/csv", consumes = "multipart/form-data", produces = "application/json")
-    public ResponseEntity<List<String>> postUserCSV(@RequestPart(value="file") MultipartFile file) throws IOException{
+    public ResponseEntity<List<String>> postUserCSV(@RequestPart(value="file") MultipartFile file, @RequestParam(value = "scripting", defaultValue = "false") boolean allowScripts) throws IOException{
         if(!isAdminAuthentication()){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -192,7 +212,7 @@ public class ClassroomAPI {
         List<String> response = new ArrayList<>();
         for (Map.Entry<String, UsersDTO> dtoEntry : usersDTOMap.entrySet()) {
             try {
-                response.addAll(createUser(dtoEntry.getKey(), dtoEntry.getValue()));
+                response.addAll(createUser(dtoEntry.getKey(), dtoEntry.getValue(), allowScripts));
             } catch (Exception e) {
                 response.add("Error: " + e.getMessage());
                 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);

@@ -118,6 +118,29 @@ For local testing, supply the values through your run configuration's environmen
 
 In production, inject the variables at container startup, using the Compose `environment` entries above or `docker run --env-file .env ...`; credentials are not baked into the image. Restart the app/recreate the container after changes. For a basic test, use the AI Agent template, set Agent name and Message, enable `asyncBefore`, and map `${output}` to `agentResult`.
 
+### JSON HTTP template authentication
+
+Template version 3 supports server-managed authentication, no authentication, or a transient String credential (`requestApiKey` by default). Authenticated requests require HTTPS; redirects are disabled. Supply transient credentials with `valueInfo: { "transient": true }` and execute the connector in the same transaction, before wait states or asynchronous boundaries. Do not enter credentials directly in the Modeler.
+
+Use trusted models and service destinations. Update older template-bound models to version 4, remove the former Environment input and Authorization-building expression, and redeploy.
+
+### Process expressions
+
+BPMN and form expressions expose only `api_connect`, `notify`, `inter_process`, `logger`, `messageBroker` and `classroomHttpConnectService`. Process variables and Spin functions remain available. Restart the application and update models using infrastructure beans such as `environment`.
+
+### Scripting permissions
+
+Engine-managed scripts require the SYSTEM group `scripting` to be assigned to their process, case or decision tenant. The group is created at startup; administrators assign it in Admin or via REST. User membership alone does not grant script permission. Authenticated `camunda-admin` invocations bypass this check; background jobs require the tenant assignment.
+
+These admin-only Classroom API endpoints accept `scripting=true` for newly created tenants:
+
+- `POST /classroom/user`
+- `POST /classroom/user/generator`
+- `POST /classroom/user/csv`
+- `GET /classroom/user/showcase/generator`
+
+Restart to apply the policy. Expression restrictions and script permissions do not provide a sandbox; deploy executable models only from trusted authors.
+
 ## Creating a release
 
 Releases are built automatically by the GitHub Actions workflow when a new tag whose name starts with `v` is created. Use a semantic version tag such as `v1.2.0`.

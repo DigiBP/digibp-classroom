@@ -5,6 +5,7 @@
 
 package ch.fhnw.digibp.classroom.service;
 
+import ch.fhnw.digibp.classroom.config.ScriptAccessPlugin;
 import org.cibseven.bpm.engine.IdentityService;
 import org.cibseven.bpm.engine.identity.Group;
 import org.cibseven.bpm.engine.identity.Tenant;
@@ -75,6 +76,10 @@ public class UserService {
 
     public void addGroupsToTenant(String[] groupIds, String tenantId) {
         for (String groupId : groupIds) {
+            // Execution permission is assigned explicitly, never inferred from user memberships.
+            if (ScriptAccessPlugin.SCRIPT_GROUP.equals(groupId)) {
+                continue;
+            }
             if (identityService.createGroupQuery().groupId(groupId).count() > 0
                     && identityService.createGroupQuery().groupId(groupId).memberOfTenant(tenantId).count() == 0) {
                 identityService.createTenantGroupMembership(tenantId, groupId);

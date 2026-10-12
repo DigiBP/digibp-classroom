@@ -120,9 +120,9 @@ In production, inject the variables at container startup, using the Compose `env
 
 ### JSON HTTP template authentication
 
-Template version 3 supports server-managed authentication, no authentication, or a transient String credential (`requestApiKey` by default). Authenticated requests require HTTPS; redirects are disabled. Supply transient credentials with `valueInfo: { "transient": true }` and execute the connector in the same transaction, before wait states or asynchronous boundaries. Do not enter credentials directly in the Modeler.
+Template version 4: **Own key** accepts a token without `Bearer` in **Auth Key (Own key)**, saved in the BPMN model. **Server key** sends `OPENAI_API_KEY` only when the URL starts with `OPENAI_BASE_URL` at a URL boundary. Authenticated requests require HTTPS; redirects are disabled.
 
-Use trusted models and service destinations. Update older template-bound models to version 4, remove the former Environment input and Authorization-building expression, and redeploy.
+Use trusted models and service destinations. Update older template-bound models to version 4, remove the former Environment input, transient-key-variable input and Authorization-building expression, and redeploy.
 
 ### Process expressions
 

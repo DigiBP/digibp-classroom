@@ -371,7 +371,7 @@
       "name": "JSON HTTP Request + JSONPath Extraction",
       "id": "onl.mrtn.camunda.http.json_api_call",
       "description": "Send an HTTP request with an optional JSON body and optional Bearer authentication. Store the HTTP status and complete response body, and optionally extract a value, object, or array using JSONPath. Includes a zero-shot decision model sentiment example.",
-      "version": 3,
+      "version": 4,
       "entriesVisible": false,
       "appliesTo": [
          "bpmn:ServiceTask"
@@ -393,7 +393,7 @@
       "properties": [
          {
             "label": "Authentication",
-            "description": "Choose no authentication, a transient runtime key, or the server key. Key modes require HTTPS.",
+            "description": "Choose no authentication, your own key, or the server key. Key modes require HTTPS. The server key is sent only to OPENAI_BASE_URL and endpoints below its path.",
             "type": "Dropdown",
             "value": "server-openai",
             "choices": [
@@ -402,8 +402,8 @@
                   "value": "none"
                },
                {
-                  "name": "Own key (transient)",
-                  "value": "transient"
+                  "name": "Own key",
+                  "value": "own-key"
                },
                {
                   "name": "Server key (OPENAI_API_KEY)",
@@ -416,13 +416,13 @@
             }
          },
          {
-            "label": "Transient key variable",
-            "description": "Used only with Own key: name of the transient String variable supplied when starting or resuming execution. Enter the key without the Bearer prefix at runtime, not here. The key does not survive wait states or async boundaries.",
+            "label": "Auth Key (Own key)",
+            "description": "Used only with Own key. Paste the key without the Bearer prefix. This value is saved in the BPMN model; leave empty for None or Server key.",
             "type": "String",
-            "value": "requestApiKey",
+            "value": "",
             "binding": {
-               "type": "camunda:inputParameter",
-               "name": "jsonApiAuthKeyVariable"
+               "type": "camunda:property",
+               "name": "digibpAuthKey"
             }
          },
          {
@@ -472,7 +472,7 @@
                },
                {
                   "label": "URL",
-                  "description": "Full API endpoint URL. Both key modes require HTTPS. Redirects are not followed.",
+                  "description": "Full API endpoint URL. Both key modes require HTTPS. Server key requires the OPENAI_BASE_URL prefix. Redirects are not followed.",
                   "group": "endpoint",
                   "type": "String",
                   "value": "https://litellm.engines.aisl.science/v1/systemone",
@@ -533,14 +533,6 @@
                   "binding": {
                      "type": "camunda:inputParameter",
                      "name": "digibpAuthMode"
-                  }
-               },
-               {
-                  "type": "Hidden",
-                  "value": "${jsonApiAuthKeyVariable}",
-                  "binding": {
-                     "type": "camunda:inputParameter",
-                     "name": "digibpAuthKeyVariable"
                   }
                },
                {

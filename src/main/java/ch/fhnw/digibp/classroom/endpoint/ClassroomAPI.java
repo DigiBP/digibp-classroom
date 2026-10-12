@@ -222,7 +222,7 @@ public class ClassroomAPI {
     }
 
     @PostMapping(path = "/deployment/generator", consumes = "multipart/form-data")
-    public ResponseEntity<List<String>> postDeploymentGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestParam(value = "deployment name", required = false) String deploymentName, @RequestPart(value="files") List<MultipartFile> files) throws IOException {
+    public ResponseEntity<List<String>> postDeploymentGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestParam(value = "deployment name", required = false) String deploymentName, @RequestPart(value="files") List<MultipartFile> files, @RequestParam(value = "importToModeler", defaultValue = "false") boolean importToModeler) throws IOException {
         if(!isAdminAuthentication()){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -237,7 +237,7 @@ public class ClassroomAPI {
         List<String> deploymentIds = new ArrayList<>();
         for (int number=firstId; number<=lastId; number++) {
             String tenantId = prefix + number + suffix;
-            deploymentIds.add(deploymentService.createTenantDeployment(tenantId, deploymentName, "ClassroomAPI by " + getCurrentUser(), files));
+            deploymentIds.add(deploymentService.createTenantDeployment(tenantId, deploymentName, "ClassroomAPI by " + getCurrentUser(), files, importToModeler));
         }
         return new ResponseEntity<>(deploymentIds, HttpStatus.ACCEPTED);
     }
@@ -256,14 +256,14 @@ public class ClassroomAPI {
     }
 
     @PostMapping(path = "/deployment", consumes = "multipart/form-data")
-    public ResponseEntity<String> postDeployment(@RequestParam(value = "tenant", required = false, defaultValue = "") String tenantId, @RequestParam(value = "deployment name", required = false) String deploymentName, @RequestPart(value="files") List<MultipartFile> files) throws IOException {
+    public ResponseEntity<String> postDeployment(@RequestParam(value = "tenant", required = false, defaultValue = "") String tenantId, @RequestParam(value = "deployment name", required = false) String deploymentName, @RequestPart(value="files") List<MultipartFile> files, @RequestParam(value = "importToModeler", defaultValue = "false") boolean importToModeler) throws IOException {
         if(!isAdminAuthentication()){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         if(deploymentName == null) {
             deploymentName = files.get(0).getOriginalFilename();
         }
-        return new ResponseEntity<>(deploymentService.createTenantDeployment(tenantId, deploymentName, "ClassroomAPI by " + getCurrentUser(), files), HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(deploymentService.createTenantDeployment(tenantId, deploymentName, "ClassroomAPI by " + getCurrentUser(), files, importToModeler), HttpStatus.ACCEPTED);
     }
 
     @DeleteMapping(path = "/deployment")

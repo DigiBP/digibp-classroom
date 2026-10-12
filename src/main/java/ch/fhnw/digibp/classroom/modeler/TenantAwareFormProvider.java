@@ -26,20 +26,16 @@ public class TenantAwareFormProvider extends FormProvider {
 
     private final FormRepository repository;
     private final ModelerTenantContext tenantContext;
-    private final ModelerDeploymentSynchronizer synchronizer;
 
     public TenantAwareFormProvider(FormRepository repository,
-                                   ModelerTenantContext tenantContext,
-                                   ModelerDeploymentSynchronizer synchronizer) {
+                                   ModelerTenantContext tenantContext) {
         this.repository = repository;
         this.tenantContext = tenantContext;
-        this.synchronizer = synchronizer;
     }
 
     @Override
     public List<FormEntity> getForms(String keyword, int firstResult, int maxResults) {
         String tenantId = tenantContext.currentTenantId();
-        synchronizer.synchronize(tenantId);
         String normalizedKeyword = keyword == null ? "" : keyword.toLowerCase(Locale.ROOT);
         List<FormEntity> result = repository.findAll(Sort.by("updated").descending()).stream()
                 .filter(entity -> tenantContext.belongsToTenant(entity.getFormId(), tenantId))

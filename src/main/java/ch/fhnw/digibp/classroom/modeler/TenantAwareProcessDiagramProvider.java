@@ -32,21 +32,17 @@ public class TenantAwareProcessDiagramProvider extends DBProcessDiagramProvider 
 
     private final ProcessDiagramRepository repository;
     private final ModelerTenantContext tenantContext;
-    private final ModelerDeploymentSynchronizer synchronizer;
 
     public TenantAwareProcessDiagramProvider(ProcessDiagramRepository repository,
-                                             ModelerTenantContext tenantContext,
-                                             ModelerDeploymentSynchronizer synchronizer) {
+                                             ModelerTenantContext tenantContext) {
         this.repository = repository;
         this.tenantContext = tenantContext;
-        this.synchronizer = synchronizer;
     }
 
     @Override
     public List<ProcessDiagramReduce> getDiagrams(String keyword, String diagramType,
                                                    int firstResult, int maxResults) {
         String tenantId = tenantContext.currentTenantId();
-        synchronizer.synchronize(tenantId);
         String normalizedKeyword = keyword == null ? "" : keyword.toLowerCase(Locale.ROOT);
         String normalizedType = diagramType == null ? "" : diagramType;
 

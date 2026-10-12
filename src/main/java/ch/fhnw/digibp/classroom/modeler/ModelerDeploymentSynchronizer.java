@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
 
@@ -51,35 +49,10 @@ public class ModelerDeploymentSynchronizer {
     }
 
     @Transactional
-    public void synchronize(String tenantId) {
-        if (tenantId == null) {
-            synchronizeDeployments(null, repositoryService.createDeploymentQuery().withoutTenantId().list());
-            identityTenantIds().forEach(this::synchronize);
-            return;
+    public void importDeployment(Deployment deployment) {
+        for (Resource resource : repositoryService.getDeploymentResources(deployment.getId())) {
+            synchronizeResource(deployment.getTenantId(), deployment, resource);
         }
-
-        synchronizeDeployments(tenantId,
-                repositoryService.createDeploymentQuery().tenantIdIn(tenantId).list());
-    }
-
-    private void synchronizeDeployments(String tenantId, List<Deployment> deployments) {
-        deployments = deployments.stream()
-                .sorted(Comparator.comparing(Deployment::getDeploymentTime))
-                .toList();
-
-        for (Deployment deployment : deployments) {
-            for (Resource resource : repositoryService.getDeploymentResources(deployment.getId())) {
-                synchronizeResource(tenantId, deployment, resource);
-            }
-        }
-    }
-
-    private List<String> identityTenantIds() {
-        return repositoryService.createDeploymentQuery().list().stream()
-                .map(Deployment::getTenantId)
-                .filter(id -> id != null && !id.isBlank())
-                .distinct()
-                .toList();
     }
 
     private void synchronizeResource(String tenantId, Deployment deployment, Resource resource) {

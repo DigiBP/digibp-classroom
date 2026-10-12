@@ -5,8 +5,10 @@
 
 package ch.fhnw.digibp.classroom.service;
 
+import ch.fhnw.digibp.classroom.modeler.ModelerDeploymentSynchronizer;
 import org.cibseven.bpm.engine.RepositoryService;
 import org.cibseven.bpm.engine.repository.*;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +27,10 @@ public class DeploymentService {
     @Inject
     private RepositoryService repositoryService;
 
-    public String createTenantDeployment(String tenantId, String deploymentName, String creator, List<MultipartFile> files) throws IOException {
+    @Inject
+    private ObjectProvider<ModelerDeploymentSynchronizer> modelerSynchronizer;
+
+    public String createTenantDeployment(String tenantId, String deploymentName, String creator, List<MultipartFile> files, boolean importToModeler) throws IOException {
         DeploymentBuilder deploymentBuilder = repositoryService.createDeployment().source(creator).name(deploymentName);
         if (tenantId != null && !tenantId.isBlank()) {
             deploymentBuilder.tenantId(tenantId);
@@ -58,6 +63,9 @@ public class DeploymentService {
             }
         }
         Deployment deploy = deploymentBuilder.deploy();
+        if (importToModeler) {
+            modelerSynchronizer.ifAvailable(synchronizer -> synchronizer.importDeployment(deploy));
+        }
         return deploy.getId();
     }
 

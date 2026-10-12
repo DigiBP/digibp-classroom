@@ -38,7 +38,7 @@ public class GeneralTenantIdProvider implements TenantIdProvider {
 
         if (currentAuthentication != null) {
             List<String> tenantIds = currentAuthentication.getTenantIds();
-            if(tenantIds != null){
+            if(tenantIds != null && !tenantIds.isEmpty()){
                 return tenantIds.get(0);
             }
         }

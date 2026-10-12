@@ -8,15 +8,30 @@ package ch.fhnw.digibp.classroom.endpoint;
 import ch.fhnw.digibp.classroom.config.ScriptAccessPlugin;
 import ch.fhnw.digibp.classroom.dto.UserDTO;
 import ch.fhnw.digibp.classroom.dto.UsersDTO;
+import ch.fhnw.digibp.classroom.modeler.ModelerDeploymentSynchronizer;
 import ch.fhnw.digibp.classroom.service.DeploymentService;
 import ch.fhnw.digibp.classroom.service.TenantService;
 import ch.fhnw.digibp.classroom.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Part;
+import org.cibseven.bpm.engine.AuthorizationException;
 import org.cibseven.bpm.engine.IdentityService;
+import org.cibseven.bpm.engine.ProcessEngine;
+import org.cibseven.bpm.engine.ParseException;
+import org.cibseven.bpm.engine.rest.dto.repository.DeploymentWithDefinitionsDto;
+import org.cibseven.bpm.engine.rest.exception.RestException;
+import org.cibseven.bpm.engine.rest.impl.DeploymentRestServiceImpl;
+import org.cibseven.bpm.engine.rest.mapper.MultipartFormData;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,6 +54,15 @@ public class ClassroomAPI {
 
     @Autowired
     private DeploymentService deploymentService;
+
+    @Autowired
+    private ProcessEngine processEngine;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private ObjectProvider<ModelerDeploymentSynchronizer> modelerSynchronizer;
 
     @GetMapping(path = "/user/showcase/generator", produces = "application/json")
     public ResponseEntity<List<String>> getUserShowcaseGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestParam(value = "scripting", defaultValue = "false") boolean allowScripts){
@@ -264,6 +288,51 @@ public class ClassroomAPI {
             deploymentName = files.get(0).getOriginalFilename();
         }
         return new ResponseEntity<>(deploymentService.createTenantDeployment(tenantId, deploymentName, "ClassroomAPI by " + getCurrentUser(), files, importToModeler), HttpStatus.ACCEPTED);
+    }
+
+    @PostMapping(path = "/deployment/create", consumes = "multipart/form-data", produces = "application/json")
+    public DeploymentWithDefinitionsDto createDeployment(HttpServletRequest request,
+            @RequestParam(value = "importToModeler", defaultValue = "true") boolean importToModeler)
+            throws IOException, ServletException {
+        MultipartFormData payload = new MultipartFormData();
+        for (Part part : request.getParts()) {
+            if (!"importToModeler".equals(part.getName())) {
+                payload.addPart(new DeploymentFormPart(part));
+            }
+        }
+        try {
+            var builder = new DeploymentRestServiceImpl(processEngine.getName(), objectMapper)
+                    .extractDeploymentInformation(payload);
+            if (builder.getResourceNames().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No deployment resources contained in the form upload.");
+            }
+            var deployment = builder.deployWithResult();
+            if (importToModeler) {
+                modelerSynchronizer.ifAvailable(synchronizer -> synchronizer.importDeployment(deployment));
+            }
+            var result = DeploymentWithDefinitionsDto.fromDeployment(deployment);
+            result.addReflexiveLink(ServletUriComponentsBuilder.fromContextPath(request)
+                    .path("/engine-rest/deployment/{id}").buildAndExpand(deployment.getId()).toUri(), "GET", "self");
+            return result;
+        } catch (RestException e) {
+            throw new ResponseStatusException(HttpStatus.valueOf(e.getStatus().getStatusCode()), e.getMessage(), e);
+        } catch (ParseException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        } catch (AuthorizationException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage(), e);
+        }
+    }
+
+    private static class DeploymentFormPart extends MultipartFormData.FormPart {
+        DeploymentFormPart(Part part) throws IOException {
+            fieldName = part.getName();
+            contentType = part.getContentType();
+            fileName = part.getSubmittedFileName();
+            try (var input = part.getInputStream()) {
+                binaryContent = input.readAllBytes();
+            }
+            textContent = fileName == null ? new String(binaryContent, StandardCharsets.UTF_8) : null;
+        }
     }
 
     @DeleteMapping(path = "/deployment")

@@ -110,7 +110,7 @@ public class DeploymentRestServiceImpl extends AbstractRestProcessEngineAware im
         }
     }
 
-    public DeploymentBuilder extractDeploymentInformation(MultipartFormData payload) {
+    private DeploymentBuilder extractDeploymentInformation(MultipartFormData payload) {
         DeploymentBuilder deploymentBuilder = getProcessEngine().getRepositoryService().createDeployment();
 
         Set<String> partNames = payload.getPartNames();

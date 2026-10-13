@@ -393,7 +393,7 @@
       "properties": [
          {
             "label": "Authentication",
-            "description": "Choose no authentication, your own key, or the server key. Key modes require HTTPS. The server key is sent only to OPENAI_BASE_URL and endpoints below its path.",
+            "description": "Choose None for custom API-key headers, Own key for your Bearer token, or Server key for the server Bearer token. Bearer modes require HTTPS. The server key is sent only to OPENAI_BASE_URL and endpoints below its path.",
             "type": "Dropdown",
             "value": "server-openai",
             "choices": [
@@ -423,6 +423,20 @@
             "binding": {
                "type": "camunda:property",
                "name": "digibpAuthKey"
+            }
+         },
+         {
+            "label": "HTTP Headers",
+            "description": "HTTP headers as a JSON object with string values. For x-api-key, choose Authentication: None and use an HTTPS URL. Keys entered here are stored in the BPMN model. Authorization, Proxy-Authorization and Cookie are managed by the server and cannot be set here.",
+            "group": "request",
+            "type": "Text",
+            "value": "{\n  \"Content-Type\": \"application/json\",\n  \"Accept\": \"application/json\"\n}",
+            "constraints": {
+               "notEmpty": true
+            },
+            "binding": {
+               "type": "camunda:inputParameter",
+               "name": "jsonApiHeaders"
             }
          },
          {
@@ -537,7 +551,7 @@
                },
                {
                   "type": "Hidden",
-                  "value": "${S('{}').prop('Content-Type', 'application/json').prop('Accept', 'application/json').mapTo('java.util.HashMap')}",
+                  "value": "${S(jsonApiHeaders).mapTo('java.util.HashMap')}",
                   "binding": {
                      "type": "camunda:inputParameter",
                      "name": "headers"

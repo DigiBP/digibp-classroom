@@ -120,7 +120,19 @@ In production, inject the variables at container startup, using the Compose `env
 
 ### JSON HTTP template authentication
 
-Template version 4: **Own key** accepts a token without `Bearer` in **Auth Key (Own key)**, saved in the BPMN model. **Server key** sends `OPENAI_API_KEY` only when the URL starts with `OPENAI_BASE_URL` at a URL boundary. Authenticated requests require HTTPS; redirects are disabled.
+Template version 4: **Own key** accepts a token without `Bearer` in **Auth Key (Own key)**, saved in the BPMN model. **Server key** sends `OPENAI_API_KEY` only when the URL starts with `OPENAI_BASE_URL` at a URL boundary. Bearer-authenticated requests require HTTPS; redirects are disabled.
+
+**HTTP Headers** accepts a JSON object with string values. Its default keeps `Content-Type: application/json` and `Accept: application/json`. For APIs such as Langflow, select **Authentication: None**, use an HTTPS URL, and add your own key:
+
+```json
+{
+  "Content-Type": "application/json",
+  "Accept": "application/json",
+  "x-api-key": "your-langflow-key"
+}
+```
+
+Keys entered here are stored in the BPMN model. Custom headers do not override the managed `Authorization`, `Proxy-Authorization` or `Cookie` headers. Bearer key modes keep their existing HTTPS and server-key destination checks; **None** does not enforce HTTPS, so use HTTPS when sending a custom key. The header mapping is an ordinary Spin expression and needs no `scripting` permission. The template remains version 4; existing deployments keep their stored headers until the model is updated and redeployed. When adapting an existing version-4 model, add the task input `jsonApiHeaders` and replace the connector's `headers` input with `${S(jsonApiHeaders).mapTo('java.util.HashMap')}` if the modeler does not reapply the same template version.
 
 Use trusted models and service destinations. Update older template-bound models to version 4, remove the former Environment input, transient-key-variable input and Authorization-building expression, and redeploy.
 

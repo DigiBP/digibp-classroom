@@ -56,18 +56,18 @@ public class UserGeneratorShowcase {
         }
 
         try {
-            userService.addUser("giulia", "password", "Giulia", "Ricci", "", new String[]{"owner"}, "showcase");
-            userService.addUser("martina", "password", "Martina", "Russo", "", new String[]{"manager"}, "showcase");
-            userService.addUser("sofia", "password", "Sofia", "Conti", "", new String[]{"analyst"}, "showcase");
-            userService.addUser("chiara", "password", "Chiara", "Lombardi", "", new String[]{"engineer"}, "showcase");
+            userService.addUser("giulia", StrongPasswordGenerator.generate(), "Giulia", "Ricci", "", new String[]{"owner"}, "showcase");
+            userService.addUser("martina", StrongPasswordGenerator.generate(), "Martina", "Russo", "", new String[]{"manager"}, "showcase");
+            userService.addUser("sofia", StrongPasswordGenerator.generate(), "Sofia", "Conti", "", new String[]{"analyst"}, "showcase");
+            userService.addUser("chiara", StrongPasswordGenerator.generate(), "Chiara", "Lombardi", "", new String[]{"engineer"}, "showcase");
             groupService.addWorkflowGroup("assistant", "Assistant");
-            userService.addUser("beppe", "password", "Beppe", "Ferrari", "", new String[]{"initiator", "assistant"}, "showcase");
+            userService.addUser("beppe", StrongPasswordGenerator.generate(), "Beppe", "Ferrari", "", new String[]{"initiator", "assistant"}, "showcase");
             groupService.addWorkflowGroup("chef", "Chef");
-            userService.addUser("matteo", "password", "Matteo", "Alfonsi", "", new String[]{"worker", "chef"}, "showcase");
+            userService.addUser("matteo", StrongPasswordGenerator.generate(), "Matteo", "Alfonsi", "", new String[]{"worker", "chef"}, "showcase");
             groupService.addWorkflowGroup("courier", "Courier");
-            userService.addUser("silvio", "password", "Silvio", "Esposito", "", new String[]{"worker", "courier"}, "showcase");
+            userService.addUser("silvio", StrongPasswordGenerator.generate(), "Silvio", "Esposito", "", new String[]{"worker", "courier"}, "showcase");
         } catch (Exception e) {
-            LOGGER.info(e.getMessage());
+            LOGGER.warning("Could not create showcase users.");
         }
     }
 }

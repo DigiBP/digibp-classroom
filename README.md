@@ -22,11 +22,11 @@ Local settings belong in `src/main/resources/application-local.yaml`. The `prod`
 | Environment variable | Required | Description |
 |---|---:|---|
 | `SPRING_DATASOURCE_URL` | no | JDBC URL; defaults to `jdbc:h2:file:./data/cibseven` |
-| `SPRING_DATASOURCE_USERNAME` | no | Database user; defaults to `sa` |
-| `SPRING_DATASOURCE_PASSWORD` | no | Database password; empty by default |
-| `CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET` | yes | Base64-decodable JWT secret shared by the webclient and REST API |
+| `SPRING_DATASOURCE_USERNAME` | no | Database user |
+| `SPRING_DATASOURCE_PASSWORD` | no | Database password |
+| `CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET` | yes | Base64-decodable application authentication secret |
 | `CIBSEVEN_ENGINE_REST_URL` | yes in production | Public application URL without `/engine-rest`, for example `https://example.org` |
-| `CIBSEVEN_ADMIN_PASSWORD` | yes in production | Password of the initial `demo` administrator |
+| `CIBSEVEN_ADMIN_PASSWORD` | yes in production | Initial administrator password |
 | `CORS_ENABLED` | no | Enables CORS; defaults to `false` in the `prod` profile |
 | `CORS_ORIGIN` | no | Allowed CORS origin; defaults to `*` |
 | `OPENAI_API_KEY` | when using AI tasks | API key for the AI Agent connector |
@@ -48,13 +48,13 @@ On Apple Silicon Macs, use `--platform linux/amd64` unless a multi-architecture 
 ```shell
 docker run --platform linux/amd64 --name digibp-classroom -p 8080:8080 \
   -v digibp-classroom-data:/app/data \
-  -e CIBSEVEN_ADMIN_PASSWORD=secret \
+  -e CIBSEVEN_ADMIN_PASSWORD="${CIBSEVEN_ADMIN_PASSWORD:?Set CIBSEVEN_ADMIN_PASSWORD}" \
   -e CIBSEVEN_WEBCLIENT_AUTHENTICATION_JWTSECRET="$(openssl rand -base64 128 | tr -d '\n')" \
   -e CIBSEVEN_ENGINE_REST_URL=http://localhost:8080 \
   ghcr.io/digibp/digibp-classroom:latest
 ```
 
-Replace the example admin password before running the container. The JWT secret must be a Base64-decodable string of at least 155 characters. The command above generates a suitable temporary secret automatically.
+Set `CIBSEVEN_ADMIN_PASSWORD` in your environment before running the container. The JWT secret must be a Base64-decodable string of at least 155 characters; the command above generates a suitable temporary value.
 
 ### Docker Compose
 
@@ -112,11 +112,15 @@ The remote PostgreSQL server must accept connections from the Docker host, and t
 
 ### AI Agent: local testing and deployment
 
-AI configuration uses OS environment variables, without an AI section in the Spring YAML files. The connector reads `OPENAI_API_KEY`, `OPENAI_BASE_URL` and `CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL` directly; leave API key, Base URL and Model empty in the BPMN task to use these defaults. Remove old `digibp.ai-agent` expressions and redeploy affected models.
+Configure AI features with `OPENAI_API_KEY`, `OPENAI_BASE_URL` and `CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL`. Leave the corresponding fields empty in the AI Agent task to use these defaults. The Enterprise BPMN and Form Modeler agents use the same configuration.
 
 For local testing, supply the values through your run configuration's environment. Spring Boot does not automatically load `.env`; configure your launcher or IDE to load it if needed. The `.env` file is excluded from Git and the Docker build context.
 
-In production, inject the variables at container startup, using the Compose `environment` entries above or `docker run --env-file .env ...`; credentials are not baked into the image. Restart the app/recreate the container after changes. For a basic test, use the AI Agent template, set Agent name and Message, enable `asyncBefore`, and map `${output}` to `agentResult`.
+In production, supply the variables at container startup through Compose or `docker run --env-file .env ...`. Restart the application after configuration changes. For a basic test, use the AI Agent template, set Agent name and Message, enable `asyncBefore`, and map `${output}` to `agentResult`.
+
+Models are fetched once at startup from the provider's `/model/info` endpoint. Chat models and models without a declared mode are loaded alongside the configured default.
+
+Administrators can use `GET /classroom/ai/models/reload` to reload the model list and `PUT /classroom/ai/models/default` with a model ID as `text/plain` to change the default. Changes apply to the running instance until restart. Reopen the Enterprise agent panel after changes.
 
 ### JSON HTTP template authentication
 
@@ -171,6 +175,42 @@ Releases are built automatically by the GitHub Actions workflow when a new tag w
    ```
 
 The workflow also updates the GitHub Release with generated release notes. Use a new version number for each release. Consumers should pin the versioned image tag instead of `latest` when reproducible deployments are required.
+
+## CIB seven Enterprise build
+
+The `cibseven-ee` profile builds CIB seven Enterprise `2.2.3-ee`. For local authentication, add this server to `~/.m2/settings.xml` outside the repository:
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
+  <servers>
+    <server>
+      <id>mvn-cibseven-enterprise</id>
+      <username>${env.CIB_MAVEN_USERNAME}</username>
+      <password>${env.CIB_MAVEN_PASSWORD}</password>
+    </server>
+  </servers>
+</settings>
+```
+
+Supply `CIB_MAVEN_USERNAME` and `CIB_MAVEN_PASSWORD` through your local environment.
+
+```shell
+# Community
+mvn -B clean verify
+
+# Enterprise (requires repository authentication)
+mvn -B -Pcibseven-ee clean verify
+```
+
+For a manual test, set the secrets `CIB_MAVEN_USERNAME` and `CIB_MAVEN_PASSWORD` in the GitHub environment `cibseven-ee`, then select **Release EE → Run workflow** in Actions. The image is published as `ghcr.io/digibp/digibp-classroom-ee:test-<full-commit-SHA>`.
+
+For local EE development, place the license JSON in `license.lic`. This file is excluded from Git and Docker builds. Run from the project root:
+
+```shell
+mvn -Pcibseven-ee spring-boot:run "-Dspring-boot.run.profiles=local,ee-local"
+```
+
+In IntelliJ, use the Maven profile `cibseven-ee`, the Spring profiles `local,ee-local` and the project root as the working directory. In production, provide the license at deployment time through deployment secrets; keep it out of the image.
 
 ## Roles
 

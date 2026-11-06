@@ -6,6 +6,7 @@
 package ch.fhnw.digibp.classroom.service;
 
 import ch.fhnw.digibp.classroom.config.ScriptAccessPlugin;
+import ch.fhnw.digibp.classroom.generator.StrongPasswordGenerator;
 import org.cibseven.bpm.engine.IdentityService;
 import org.cibseven.bpm.engine.identity.Group;
 import org.cibseven.bpm.engine.identity.Tenant;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 @Service("classroomUserService")
@@ -56,6 +58,20 @@ public class UserService {
             }
         }
         return user.getId();
+    }
+
+    public String resetPassword(String userId) {
+        if (identityService.isReadOnly()) {
+            throw new IllegalStateException("Identity service is read-only");
+        }
+        User user = identityService.createUserQuery().userId(userId).singleResult();
+        if (user == null) {
+            throw new NoSuchElementException("User does not exist");
+        }
+        String password = StrongPasswordGenerator.generate();
+        user.setPassword(password);
+        identityService.saveUser(user);
+        return password;
     }
 
     public void addUserToGroup(String userId, String[] groupIds) throws Exception {

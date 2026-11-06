@@ -63,6 +63,20 @@ cibseven:
       templates:
         paths:
           - classpath*:element-templates/*.json
+      ai:
+        enabled: true
+        defaultModel: ${CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL:gpt-5.4-nano}
+        providers:
+          aisl:
+            baseUrl: ${OPENAI_BASE_URL}
+            apiKey: ${OPENAI_API_KEY}
+        models:
+          - value: ${CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL:gpt-5.4-nano}
+            provider: aisl
+            label: ${CIBSEVEN_CONNECT_AI_AGENT_DEFAULT_MODEL:gpt-5.4-nano}
+      chat:
+        enabled: true
+
 #  jersey:
 #    application-path: /rest
 #  datasource:

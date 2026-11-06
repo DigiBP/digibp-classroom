@@ -8,15 +8,19 @@ package ch.fhnw.digibp.classroom.endpoint;
 import ch.fhnw.digibp.classroom.config.ScriptAccessPlugin;
 import ch.fhnw.digibp.classroom.dto.UserDTO;
 import ch.fhnw.digibp.classroom.dto.UsersDTO;
+import ch.fhnw.digibp.classroom.generator.StrongPasswordGenerator;
+import ch.fhnw.digibp.classroom.service.AiModelService;
 import ch.fhnw.digibp.classroom.service.DeploymentService;
 import ch.fhnw.digibp.classroom.service.TenantService;
 import ch.fhnw.digibp.classroom.service.UserService;
 import org.cibseven.bpm.engine.IdentityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,8 +44,32 @@ public class ClassroomAPI {
     @Autowired
     private DeploymentService deploymentService;
 
+    @Autowired
+    private AiModelService aiModelService;
+
+    @GetMapping(path = "/ai/models/reload", produces = "application/json")
+    public ResponseEntity<List<String>> reloadAiModels() {
+        if (!isAdminAuthentication()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(aiModelService.reload());
+        } catch (ResponseStatusException exception) {
+            return ResponseEntity.status(exception.getStatusCode()).cacheControl(CacheControl.noStore())
+                    .body(aiModelService.models());
+        }
+    }
+
+    @PutMapping(path = "/ai/models/default", consumes = "text/plain", produces = "text/plain")
+    public ResponseEntity<String> setDefaultAiModel(@RequestBody String model) {
+        if (!isAdminAuthentication()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(aiModelService.setDefault(model));
+    }
+
     @GetMapping(path = "/user/showcase/generator", produces = "application/json")
-    public ResponseEntity<List<String>> getUserShowcaseGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestParam(value = "scripting", defaultValue = "false") boolean allowScripts){
+    public ResponseEntity<List<String>> getUserShowcaseGenerator(@RequestParam(value = "prefix", required = false, defaultValue = "") String prefix, @RequestParam(value = "firstId") Integer firstId, @RequestParam(value = "lastId") Integer lastId, @RequestParam(value = "suffix", required = false, defaultValue = "") String suffix, @RequestParam(value = "scripting", defaultValue = "false") boolean allowScripts, @RequestParam(value = "generateStrongPassword", defaultValue = "false") boolean generateStrongPassword){
         if(!isAdminAuthentication()){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -54,26 +82,51 @@ public class ClassroomAPI {
                 assignScriptGroup(tenantId, allowScripts);
                 response.add("Tenant with ID " + id + " generated.");
 
-                id = userService.addUser(tenantId+"giulia", "password", tenantId+" Giulia", "Ricci", "", new String[]{"owner"}, tenantId);
-                response.add("User with ID " + id + " generated.");
-                id = userService.addUser(tenantId+"martina", "password", tenantId+" Martina", "Russo", "", new String[]{"manager"}, tenantId);
-                response.add("User with ID " + id + " generated.");
-                id = userService.addUser(tenantId+"sofia", "password", tenantId+" Sofia", "Conti", "", new String[]{"analyst"}, tenantId);
-                response.add("User with ID " + id + " generated.");
-                id = userService.addUser(tenantId+"chiara", "password", tenantId+" Chiara", "Lombardi", "", new String[]{"engineer"}, tenantId);
-                response.add("User with ID " + id + " generated.");
-                id = userService.addUser(tenantId+"beppe", "password", tenantId+" Beppe", "Ferrari", "", new String[]{"initiator", "assistant"}, tenantId);
-                response.add("User with ID " + id + " generated.");
-                id = userService.addUser(tenantId+"matteo", "password", tenantId+" Matteo", "Alfonsi", "", new String[]{"worker", "chef"}, tenantId);
-                response.add("User with ID " + id + " generated.");
-                id = userService.addUser(tenantId+"silvio", "password", tenantId+" Silvio", "Esposito", "", new String[]{"worker", "courier"}, tenantId);
-                response.add("User with ID " + id + " generated.");
+                createShowcaseUser(response, tenantId, "giulia", "Giulia", "Ricci", new String[]{"owner"}, generateStrongPassword);
+                createShowcaseUser(response, tenantId, "martina", "Martina", "Russo", new String[]{"manager"}, generateStrongPassword);
+                createShowcaseUser(response, tenantId, "sofia", "Sofia", "Conti", new String[]{"analyst"}, generateStrongPassword);
+                createShowcaseUser(response, tenantId, "chiara", "Chiara", "Lombardi", new String[]{"engineer"}, generateStrongPassword);
+                createShowcaseUser(response, tenantId, "beppe", "Beppe", "Ferrari", new String[]{"initiator", "assistant"}, generateStrongPassword);
+                createShowcaseUser(response, tenantId, "matteo", "Matteo", "Alfonsi", new String[]{"worker", "chef"}, generateStrongPassword);
+                createShowcaseUser(response, tenantId, "silvio", "Silvio", "Esposito", new String[]{"worker", "courier"}, generateStrongPassword);
             } catch (Exception e) {
-                response.add("Error: " + e.getMessage());
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                response.add("Error: Showcase user creation failed.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).cacheControl(CacheControl.noStore()).body(response);
             }
         }
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore()).body(response);
+    }
+
+    private void createShowcaseUser(List<String> response, String tenantId, String userId,
+                                    String firstName, String lastName, String[] groups,
+                                    boolean generateStrongPassword) throws Exception {
+        String password = generateStrongPassword ? StrongPasswordGenerator.generate() : "password";
+        String id = userService.addUser(tenantId + userId, password, tenantId + " " + firstName,
+                lastName, "", groups, tenantId);
+        if (id == null) {
+            throw new IllegalStateException("User could not be created");
+        }
+        response.add("User with ID " + id + " generated."
+                + (generateStrongPassword ? " Password: " + password : ""));
+    }
+
+    @PostMapping(path = "/user/{userId}/password/reset", produces = "application/json")
+    public ResponseEntity<Map<String, String>> resetUserPassword(@PathVariable("userId") String userId) {
+        if (!isAdminAuthentication()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .cacheControl(CacheControl.noStore()).build();
+        }
+        try {
+            String password = userService.resetPassword(userId);
+            return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                    .body(Map.of("userId", userId, "password", password));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).cacheControl(CacheControl.noStore())
+                    .body(Map.of("error", "User does not exist."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).cacheControl(CacheControl.noStore())
+                    .body(Map.of("error", "Password could not be reset."));
+        }
     }
 
     private void assignScriptGroup(String tenantId, boolean allowScripts) {
@@ -298,7 +351,9 @@ public class ClassroomAPI {
     }
 
     private Boolean isAdminAuthentication(){
-        return identityService.getCurrentAuthentication().getGroupIds().contains("camunda-admin");
+        var authentication = identityService.getCurrentAuthentication();
+        return authentication != null && authentication.getGroupIds() != null
+                && authentication.getGroupIds().contains("camunda-admin");
     }
 
     private String getCurrentUser(){

@@ -5,8 +5,10 @@ import org.cibseven.modeler.model.ProcessDiagramEntity;
 import org.cibseven.modeler.model.ProcessDiagramReduce;
 import org.cibseven.modeler.provider.DBProcessDiagramProvider;
 import org.cibseven.modeler.repository.ProcessDiagramRepository;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -29,6 +31,21 @@ import java.util.Optional;
 @Component
 @ConditionalOnProperty(prefix = "cibseven.webclient.modeler", name = "enabled", havingValue = "true")
 public class TenantAwareProcessDiagramProvider extends DBProcessDiagramProvider {
+
+    @Bean
+    public static BeanFactoryPostProcessor tenantAwareDiagramProviderSelection() {
+        return beanFactory -> {
+            String[] tenantProviders = beanFactory.getBeanNamesForType(
+                    TenantAwareProcessDiagramProvider.class, true, false);
+            if (tenantProviders.length != 1) {
+                throw new IllegalStateException("Expected exactly one tenant-aware process diagram provider");
+            }
+            // EE adds another primary provider. ModelerService must retain tenant isolation.
+            for (String name : beanFactory.getBeanNamesForType(DBProcessDiagramProvider.class, true, false)) {
+                beanFactory.getBeanDefinition(name).setPrimary(name.equals(tenantProviders[0]));
+            }
+        };
+    }
 
     private final ProcessDiagramRepository repository;
     private final ModelerTenantContext tenantContext;

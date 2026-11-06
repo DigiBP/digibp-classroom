@@ -6,7 +6,9 @@ import org.cibseven.modeler.provider.DiagramUsageProvider;
 import org.cibseven.modeler.provider.FormUsageProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -23,7 +25,11 @@ class TenantAwareDiagramUsageProvider extends DiagramUsageProvider {
 
     @Override
     public DiagramUsageEntity checkSessionUser(String diagramId) {
-        diagramProvider.findById(diagramId).orElseThrow();
+        // New or deleted diagrams have no editing session; existing foreign diagrams
+        // are still rejected by the tenant-aware lookup before this branch.
+        if (diagramProvider.findById(diagramId).isEmpty()) {
+            return null;
+        }
         return super.checkSessionUser(diagramId);
     }
 
@@ -31,7 +37,8 @@ class TenantAwareDiagramUsageProvider extends DiagramUsageProvider {
     public DiagramUsageEntity findBySessionId(String sessionId) {
         DiagramUsageEntity usage = super.findBySessionId(sessionId);
         if (usage != null && usage.getDiagram() != null) {
-            diagramProvider.findById(usage.getDiagram().getId()).orElseThrow();
+            diagramProvider.findById(usage.getDiagram().getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         }
         return usage;
     }
@@ -40,7 +47,8 @@ class TenantAwareDiagramUsageProvider extends DiagramUsageProvider {
     public Optional<DiagramUsageEntity> getSessionById(String id) {
         Optional<DiagramUsageEntity> usage = super.getSessionById(id);
         usage.filter(item -> item.getDiagram() != null)
-                .ifPresent(item -> diagramProvider.findById(item.getDiagram().getId()).orElseThrow());
+                .ifPresent(item -> diagramProvider.findById(item.getDiagram().getId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         return usage;
     }
 }
@@ -58,7 +66,9 @@ class TenantAwareFormUsageProvider extends FormUsageProvider {
 
     @Override
     public FormUsageEntity checkSessionUser(String formId) {
-        formProvider.findById(formId).orElseThrow();
+        if (formProvider.findById(formId).isEmpty()) {
+            return null;
+        }
         return super.checkSessionUser(formId);
     }
 
@@ -66,7 +76,8 @@ class TenantAwareFormUsageProvider extends FormUsageProvider {
     public FormUsageEntity findBySessionId(String sessionId) {
         FormUsageEntity usage = super.findBySessionId(sessionId);
         if (usage != null && usage.getForm() != null) {
-            formProvider.findById(usage.getForm().getId()).orElseThrow();
+            formProvider.findById(usage.getForm().getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         }
         return usage;
     }
@@ -75,7 +86,8 @@ class TenantAwareFormUsageProvider extends FormUsageProvider {
     public Optional<FormUsageEntity> getSessionById(String id) {
         Optional<FormUsageEntity> usage = super.getSessionById(id);
         usage.filter(item -> item.getForm() != null)
-                .ifPresent(item -> formProvider.findById(item.getForm().getId()).orElseThrow());
+                .ifPresent(item -> formProvider.findById(item.getForm().getId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
         return usage;
     }
 }

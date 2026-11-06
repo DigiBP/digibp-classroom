@@ -6,11 +6,14 @@
 package ch.fhnw.digibp.classroom.config;
 
 import ch.fhnw.digibp.classroom.tenant.TenantIdProviderPlugin;
+import jakarta.ws.rs.container.DynamicFeature;
 import onl.mrtn.camunda.http.plugin.NotifyProcessEnginePlugin;
 import org.cibseven.bpm.engine.impl.cfg.AbstractProcessEnginePlugin;
 import org.cibseven.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.cibseven.bpm.engine.impl.cfg.ProcessEnginePlugin;
 import org.cibseven.bpm.engine.spring.SpringExpressionManager;
+import org.cibseven.bpm.engine.rest.DeploymentRestService;
+import org.springframework.boot.autoconfigure.jersey.ResourceConfigCustomizer;
 import org.cibseven.bpm.spring.boot.starter.configuration.Ordering;
 import org.cibseven.connect.Connectors;
 import org.cibseven.connect.httpclient.HttpConnector;
@@ -27,6 +30,16 @@ import java.util.stream.Collectors;
 
 @Configuration
 public class EngineConfig {
+
+    @Bean
+    public static ResourceConfigCustomizer deploymentTenantValidation() {
+        return config -> config.register((DynamicFeature) (resource, context) -> {
+            if (DeploymentRestService.class.isAssignableFrom(resource.getResourceClass())
+                    && "createDeployment".equals(resource.getResourceMethod().getName())) {
+                context.register(DeploymentTenantInterceptor.class);
+            }
+        });
+    }
 
     @Bean
     public static ProcessEnginePlugin httpAuthenticationConfiguration(Environment environment) {

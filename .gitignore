@@ -69,3 +69,6 @@ vendor/
 ### Environment Variables ###
 *.env
 application-local.yaml
+
+### Local Enterprise license ###
+license.lic

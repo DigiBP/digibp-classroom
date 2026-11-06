@@ -21,6 +21,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Determine EE image tags
+        id: image-tags
+        shell: bash
+        run: |
+          {
+            echo 'tags<<EOF'
+            if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" == v* ]]; then
+              echo "ghcr.io/digibp/digibp-classroom-ee:${GITHUB_REF_NAME}"
+              echo 'ghcr.io/digibp/digibp-classroom-ee:latest'
+            else
+              echo "ghcr.io/digibp/digibp-classroom-ee:test-${GITHUB_SHA}"
+            fi
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -62,4 +77,4 @@ jobs:
         with:
           context: ${{ runner.temp }}/ee-image
           push: true
-          tags: ghcr.io/digibp/digibp-classroom-ee:test-${{ github.sha }}
+          tags: ${{ steps.image-tags.outputs.tags }}

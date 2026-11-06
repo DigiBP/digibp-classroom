@@ -13,7 +13,9 @@ permissions:
 jobs:
   release-ee:
     runs-on: ubuntu-latest
-    environment: cibseven-ee
+    environment:
+      name: cibseven-ee
+      deployment: false
 
     steps:
       - name: Checkout

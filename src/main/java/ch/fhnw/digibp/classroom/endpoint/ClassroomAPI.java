@@ -129,6 +129,65 @@ public class ClassroomAPI {
         }
     }
 
+    @PutMapping(path = "/tenant/scripting", produces = "application/json")
+    public ResponseEntity<List<String>> putTenantScripting(@RequestParam("tenant") String tenantId,
+            @RequestParam(value = "scripting", defaultValue = "true") boolean allowScripts) {
+        if (!isAdminAuthentication()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return setExistingTenantsScripting(List.of(tenantId), allowScripts);
+    }
+
+    @PutMapping(path = "/tenant/scripting/generator", produces = "application/json")
+    public ResponseEntity<List<String>> putTenantScriptingGenerator(
+            @RequestParam(value = "prefix", defaultValue = "") String prefix,
+            @RequestParam("firstId") Integer firstId,
+            @RequestParam("lastId") Integer lastId,
+            @RequestParam(value = "suffix", defaultValue = "") String suffix,
+            @RequestParam(value = "scripting", defaultValue = "true") boolean allowScripts) {
+        if (!isAdminAuthentication()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (firstId > lastId) {
+            return ResponseEntity.badRequest().body(List.of("Error: firstId must not exceed lastId."));
+        }
+        List<String> tenantIds = new ArrayList<>();
+        for (long number = firstId; number <= lastId; number++) {
+            tenantIds.add(prefix + number + suffix);
+        }
+        return setExistingTenantsScripting(tenantIds, allowScripts);
+    }
+
+    private ResponseEntity<List<String>> setExistingTenantsScripting(List<String> tenantIds, boolean allowScripts) {
+        // Validate the complete range before changing any memberships.
+        for (String tenantId : tenantIds) {
+            if (tenantId.isBlank()) {
+                return ResponseEntity.badRequest().body(List.of("Error: Tenant ID must not be blank."));
+            }
+            if (!tenantService.tenantExists(tenantId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(List.of("Error: Tenant with ID " + tenantId + " does not exist."));
+            }
+        }
+        List<String> response = new ArrayList<>();
+        try {
+            for (String tenantId : tenantIds) {
+                if (allowScripts) {
+                    assignScriptGroup(tenantId, true);
+                } else if (identityService.createTenantQuery().tenantId(tenantId)
+                        .groupMember(ScriptAccessPlugin.SCRIPT_GROUP).count() > 0) {
+                    identityService.deleteTenantGroupMembership(tenantId, ScriptAccessPlugin.SCRIPT_GROUP);
+                }
+                response.add("Scripting " + (allowScripts ? "enabled" : "disabled")
+                        + " for tenant with ID " + tenantId + ".");
+            }
+        } catch (Exception e) {
+            response.add("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+        return ResponseEntity.ok(response);
+    }
+
     private void assignScriptGroup(String tenantId, boolean allowScripts) {
         if (!allowScripts) {
             return;
@@ -142,7 +201,10 @@ public class ClassroomAPI {
         } else if (!ScriptAccessPlugin.GROUP_TYPE.equals(group.getType())) {
             throw new IllegalStateException("Group '" + ScriptAccessPlugin.SCRIPT_GROUP + "' must have type SYSTEM");
         }
-        identityService.createTenantGroupMembership(tenantId, ScriptAccessPlugin.SCRIPT_GROUP);
+        if (identityService.createTenantQuery().tenantId(tenantId)
+                .groupMember(ScriptAccessPlugin.SCRIPT_GROUP).count() == 0) {
+            identityService.createTenantGroupMembership(tenantId, ScriptAccessPlugin.SCRIPT_GROUP);
+        }
     }
 
     private List<String> createUser(String tenantId, UsersDTO users, boolean allowScripts) throws Exception {

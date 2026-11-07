@@ -155,6 +155,15 @@ These admin-only Classroom API endpoints accept `scripting=true` for newly creat
 - `POST /classroom/user/csv`
 - `GET /classroom/user/showcase/generator`
 
+To enable or disable scripting for existing tenants, use these admin-only endpoints in the Classroom API (also available in Swagger UI at `/apis`):
+
+- Single tenant: `PUT /classroom/tenant/scripting?tenant=team1&scripting=true`
+- Tenant range: `PUT /classroom/tenant/scripting/generator?prefix=team&firstId=1&lastId=10&suffix=&scripting=true`
+
+Set `scripting=true` to add the tenant to the `scripting` group or `scripting=false` to remove its membership. Omitting `scripting` defaults to `true`. The group and its other memberships are preserved. Both operations can be repeated, including disabling when no membership or scripting group exists.
+
+The range includes both `firstId` and `lastId`; prefix and suffix are optional. These requests need no body and return HTTP 200 with a confirmation for each tenant. A blank tenant ID or reversed range returns HTTP 400. A missing tenant returns HTTP 404; all tenants in the range are checked before any membership is changed.
+
 Restart to apply the policy. Expression restrictions and script permissions do not provide a sandbox; deploy executable models only from trusted authors.
 
 ## Creating a release

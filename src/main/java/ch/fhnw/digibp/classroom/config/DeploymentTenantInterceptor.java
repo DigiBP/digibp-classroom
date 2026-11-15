@@ -49,10 +49,6 @@ public class DeploymentTenantInterceptor implements ReaderInterceptor {
             }
             return payload;
         }
-
-        if (tenantPart != null && tenantId == null) {
-            throw new InvalidRequestException(Status.BAD_REQUEST, "Tenant id must be a text field.");
-        }
         List<String> tenantIds = authentication == null ? null : authentication.getTenantIds();
         if (tenantId == null || tenantId.isBlank()) {
             if (tenantIds == null || tenantIds.size() != 1) {

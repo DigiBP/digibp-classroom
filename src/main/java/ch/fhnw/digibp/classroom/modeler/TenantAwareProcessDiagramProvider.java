@@ -15,11 +15,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import java.io.ByteArrayInputStream;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -180,27 +175,8 @@ public class TenantAwareProcessDiagramProvider extends DBProcessDiagramProvider 
     }
 
     private String actualKey(ProcessDiagramEntity entity) {
-        if (entity.getDiagram() == null) {
-            return tenantContext.unqualify(entity.getProcesskey());
-        }
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-            var document = factory.newDocumentBuilder()
-                    .parse(new ByteArrayInputStream(entity.getDiagram()));
-            String expression = "dmn".equals(entity.getType())
-                    ? "string(/*[local-name()='definitions']/@id)"
-                    : "string((//*[local-name()='process'])[1]/@id)";
-            String key = (String) XPathFactory.newInstance().newXPath()
-                    .evaluate(expression, document, XPathConstants.STRING);
-            return key == null || key.isBlank() ? tenantContext.unqualify(entity.getProcesskey()) : key;
-        } catch (Exception e) {
-            return tenantContext.unqualify(entity.getProcesskey());
-        }
+        // Preserve the Modeler's diagram key; tenant storage only adds a prefix.
+        return tenantContext.unqualify(entity.getProcesskey());
     }
 
     private String value(String value) {
